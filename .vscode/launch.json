@@ -1,0 +1,172 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch find NGS matches",
+            "program": "${workspaceFolder}/commands/findNgsMatches.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "13"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch find Storm League games",
+            "program": "${workspaceFolder}/commands/findStormLeagueGames.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ],
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch copy replays",
+            "program": "${workspaceFolder}/commands/copyReplays.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch parse replays",
+            "program": "${workspaceFolder}/commands/parseReplays.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ],
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch import replays",
+            "program": "${workspaceFolder}/commands/importReplays.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ],
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch purge replays",
+            "program": "${workspaceFolder}/commands/purgeReplays.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ],
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch index players",
+            "program": "${workspaceFolder}/commands/indexPlayers.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ],
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch renew certificate",
+            "program": "${workspaceFolder}/commands/renewCertificate.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch sync heroes",
+            "program": "${workspaceFolder}/commands/syncHeroes.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch catch up",
+            "program": "${workspaceFolder}/commands/catchUp.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch create JSON",
+            "program": "${workspaceFolder}/commands/createJson.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "2"
+            ],
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch local API",
+            "program": "${workspaceFolder}/local/server.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to local API",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch backup database",
+            "program": "${workspaceFolder}/commands/backupDatabase.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch generate leader stats",
+            "program": "${workspaceFolder}/commands/generateLeaderStats.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+    ]
+}

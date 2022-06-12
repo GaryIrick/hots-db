@@ -27,6 +27,7 @@ resource "azurerm_function_app" "hots_db_functions" {
     SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
     AZURE_LOG_LEVEL                = "verbose"
     APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.functions_logs.instrumentation_key
+    SUBSCRIPTION_ID                = data.azurerm_client_config.current.subscription_id
   }
   identity {
     type = "SystemAssigned"

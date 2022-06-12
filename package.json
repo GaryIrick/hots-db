@@ -1,0 +1,28 @@
+{
+  "name": "hots-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GaryIrick/hots-db.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GaryIrick/hots-db/issues"
+  },
+  "homepage": "https://github.com/GaryIrick/hots-db#readme",
+  "dependencies": {
+    "@azure/arm-cdn": "^7.0.1",
+    "@azure/arm-dns": "^5.0.1",
+    "@azure/identity": "^2.0.4",
+    "@azure/keyvault-certificates": "^4.4.0",
+    "acme-client": "^4.2.5",
+    "node-forge": "^1.3.1",
+    "uuid": "^8.3.2"
+  }
+}

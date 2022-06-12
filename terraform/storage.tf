@@ -76,4 +76,5 @@ resource "azurerm_storage_blob" "test_file" {
   storage_container_name = "$web"
   type                   = "Block"
   source                 = "index.html"
+  content_type           = "text/html"
 }

@@ -11,10 +11,6 @@ resource "azurerm_dns_cname_record" "api_cname" {
   record              = azurerm_function_app.hots_db_functions.default_hostname
 }
 
-output "foo" {
-  value = azurerm_function_app.hots_db_functions.default_hostname
-}
-
 resource "azurerm_dns_txt_record" "api_txt" {
   name                = "asuid.${azurerm_dns_cname_record.api_cname.name}"
   resource_group_name = local.domain_names_resource_group
@@ -80,7 +76,7 @@ resource "azurerm_cdn_profile" "web_profile" {
 }
 
 resource "azurerm_cdn_endpoint" "web" {
-  name                = "hots-helper"
+  name                = "hots-db-web-endpoint"
   location            = local.location
   resource_group_name = local.resource_group
   profile_name        = azurerm_cdn_profile.web_profile.name
@@ -124,7 +120,7 @@ resource "azurerm_cdn_endpoint" "web" {
 # https://docs.microsoft.com/en-us/azure/cdn/onboard-apex-domain
 #
 # Here are the steps you'll need to take to add the endpoint:
-# - Create the endpoint by hand in the Azure portal.
+# - Add the custom domain to the endpoint by hand in the Azure console.
 # - Run renewCertificate.js to get a new certificate and attach it to the endpoint.
-# - RUn renewCertificate regularly to get fresh certificates.
+# - RUn renewCertificate.js regularly to get fresh certificates.
 
