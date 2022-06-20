@@ -104,7 +104,7 @@ dist
 .tern-port
 
 # Local .terraform directories
-**/.terraform/*
+**/.terraform/
 
 # .tfstate files
 *.tfstate

@@ -17,6 +17,18 @@ resource "azurerm_key_vault_secret" "heroes_profile_api_key" {
   }
 }
 
+resource "azurerm_key_vault_secret" "cosmos_readonly_key" {
+  name         = "cosmos-read-only-key"
+  key_vault_id = azurerm_key_vault.key_vault.id
+  value        = azurerm_cosmosdb_account.cosmos_account.primary_readonly_key
+}
+
+resource "azurerm_key_vault_secret" "cosmos_readwrite_key" {
+  name         = "cosmos-read-write-key"
+  key_vault_id = azurerm_key_vault.key_vault.id
+  value        = azurerm_cosmosdb_account.cosmos_account.primary_key
+}
+
 resource "azurerm_key_vault_access_policy" "secret_policy_for_me" {
   key_vault_id = azurerm_key_vault.key_vault.id
   tenant_id    = data.azurerm_client_config.current.tenant_id

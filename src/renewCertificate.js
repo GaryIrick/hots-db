@@ -8,7 +8,11 @@ const { CdnManagementClient } = require('@azure/arm-cdn')
 const getServiceCredentials = require('./lib/getServiceCredentials')
 const {
   acme: { caUrl, email },
-  azure: { domainNamesResourceGroup, resourceGroup, domain, cdnProfile, cdnEndpoint, keyVault, certificateName }
+  azure: {
+    resourceGroup,
+    keyVault,
+    cdn: { domainNamesResourceGroup, domain, cdnProfile, cdnEndpoint, certificateName }
+  }
 } = require('./config')
 
 const challengeRecord = '_acme-challenge'

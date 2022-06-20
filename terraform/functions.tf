@@ -16,7 +16,7 @@ resource "azurerm_function_app" "hots_db_functions" {
   app_service_plan_id        = azurerm_app_service_plan.consumption.id
   storage_account_name       = azurerm_storage_account.functions.name
   storage_account_access_key = azurerm_storage_account.functions.primary_access_key
-  version                    = "~3"
+  version                    = "~4"
   https_only                 = true
   app_settings = {
     https_only                     = true
