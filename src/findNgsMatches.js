@@ -1,6 +1,6 @@
 const postFromNgs = require('./apis/postFromNgs')
 const getCosmos = require('./db/getCosmos')
-const { ngs: { bucket }, azure: { cosmos: { matchesContainer, readWriteKey } } } = require('./config')
+const { azure: { cosmos: { matchesContainer } } } = require('./config')
 
 const getBans = (match, homeOrAway) => {
   const bans = []

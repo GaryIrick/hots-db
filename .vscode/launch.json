@@ -16,6 +16,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch copy NGS matches",
+            "program": "${workspaceFolder}/commands/copyNgsMatches.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch renew certificate",
             "program": "${workspaceFolder}/commands/renewCertificate.js",
             "skipFiles": [

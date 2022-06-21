@@ -26,6 +26,9 @@ module.exports = {
       matchesContainer: 'ngs-matches'
     }
   },
+  aws: {
+    credentialsSecretName: "aws-credentials"
+  },
   acme: {
     caUrl: acme.directory.letsencrypt.production,
     email: 'garyirick@gmail.com'

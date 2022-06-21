@@ -29,6 +29,15 @@ resource "azurerm_key_vault_secret" "cosmos_readwrite_key" {
   value        = azurerm_cosmosdb_account.cosmos_account.primary_key
 }
 
+resource "azurerm_key_vault_secret" "aws_credentials" {
+  name         = "aws-credentials"
+  key_vault_id = azurerm_key_vault.key_vault.id
+  value        = "top_secret"
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
+
 resource "azurerm_key_vault_access_policy" "secret_policy_for_me" {
   key_vault_id = azurerm_key_vault.key_vault.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
