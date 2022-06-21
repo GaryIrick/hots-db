@@ -61,7 +61,7 @@ const copyFileFromS3ToAzure = async (bucket, key, blobClient, log) => {
     if (e.statusCode === 403 || e.statusCode === 404) {
       log(`Skipping ${key}, it appears to be unavailable.`)
     } else {
-      throw e;
+      throw e
     }
   }
 }

@@ -128,7 +128,7 @@ const updateEndpoint = async () => {
         protocolType: 'ServerNameIndication',
         certificateSource: 'AzureKeyVault',
         certificateSourceParameters: {
-          subscriptionId: subscriptionId,
+          subscriptionId,
           resourceGroupName: resourceGroup,
           vaultName: keyVault,
           secretName: certificateName,

@@ -10,7 +10,7 @@ module.exports = {
       domain: 'hots-helper.com',
       cdnProfile: 'hots-db-web-cdn',
       cdnEndpoint: 'hots-db-web-endpoint',
-      certificateName: 'hots-helper-certificate',
+      certificateName: 'hots-helper-certificate'
     },
     storage: {
       account: 'hotsdbdata',
@@ -27,7 +27,7 @@ module.exports = {
     }
   },
   aws: {
-    credentialsSecretName: "aws-credentials"
+    credentialsSecretName: 'aws-credentials'
   },
   acme: {
     caUrl: acme.directory.letsencrypt.production,

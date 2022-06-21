@@ -58,10 +58,10 @@ module.exports = async (season, log) => {
           score: match.away.score,
           domination: !!match.away.dominator
         },
-        isCopied: false,
+        isCopied: false
       }
 
-      for (var i = 1; i <= 7; i++) {
+      for (let i = 1; i <= 7; i++) {
         const replay = match.replays[i]
 
         // There was one replay that had .tempUrl, but not url, just skip it.  Data is broken, per Wraithling.
