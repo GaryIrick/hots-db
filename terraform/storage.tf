@@ -9,13 +9,13 @@ resource "azurerm_storage_account" "hots_db_data" {
   enable_https_traffic_only = true
 }
 
-resource "azurerm_role_assignment" "my_data_contributor_access" {
+resource "azurerm_role_assignment" "my_storage_contributor_access" {
   scope                = azurerm_storage_account.hots_db_data.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = data.azuread_user.me.id
 }
 
-resource "azurerm_role_assignment" "my_data_owner_access" {
+resource "azurerm_role_assignment" "my_storage_owner_access" {
   scope                = azurerm_storage_account.hots_db_data.id
   role_definition_name = "Storage Blob Data Owner"
   principal_id         = data.azuread_user.me.id
@@ -48,7 +48,7 @@ resource "azurerm_storage_account" "functions" {
   account_replication_type = "LRS"
 }
 
-resource "azurerm_role_assignment" "functions_replay_read_access" {
+resource "azurerm_role_assignment" "functions_storage_access" {
   scope                = azurerm_storage_account.hots_db_data.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_function_app.hots_db_functions.identity[0].principal_id

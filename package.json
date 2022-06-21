@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pack": "npm-pack-zip",
+    "lint": "eslint .",
+    "deploy-functions": "npm-pack-zip && az functionapp deployment source config-zip -g hots-db-resource-group -n hots-db-functions --src hots-db.zip"
   },
   "repository": {
     "type": "git",
@@ -33,5 +35,36 @@
     "node-forge": "^1.3.1",
     "superagent": "^7.1.6",
     "uuid": "^8.3.2"
-  }
+  },
+  "devDependencies": {
+    "npm-pack-zip": "^1.3.0"
+  },
+  "bundledDependencies": [
+    "@azure/arm-cdn",
+    "@azure/arm-dns",
+    "@azure/identity",
+    "@azure/keyvault-certificates",
+    "@azure/keyvault-secrets",
+    "@azure/ms-rest-nodeauth",
+    "@azure/storage-blob",
+    "@azure/cosmos",
+    "acme-client",
+    "aws-sdk",
+    "delay",
+    "hots-parser",
+    "lodash",
+    "superagent",
+    "uuid"
+  ],
+  "files": [
+    "**/*.js",
+    "**/*.json",
+    "!.vscode",
+    "!schema",
+    "!local",
+    "!site",
+    "!.eslintrc.js",
+    "!terraform",
+    "!package-lock.json"
+  ]
 }

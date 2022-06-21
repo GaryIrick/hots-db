@@ -46,26 +46,37 @@ const doesFileExistInAzure = async (blobClient) => {
   }
 }
 
-const copyFileFromS3ToAzure = async (bucket, key, blobClient) => {
-  // E_NOTIMPL: What do we do if a file is missing?
-  const s3 = await getS3()
-  const getStream = s3.getObject({
-    Bucket: bucket,
-    Key: key,
-    RequestPayer: 'requester'
-  }).createReadStream()
+const copyFileFromS3ToAzure = async (bucket, key, blobClient, log) => {
+  try {
+    const s3 = await getS3()
+    const getStream = s3.getObject({
+      Bucket: bucket,
+      Key: key,
+      RequestPayer: 'requester'
+    }).createReadStream()
 
-  await blobClient.uploadStream(getStream)
+    await blobClient.uploadStream(getStream)
+  } catch (e) {
+    // If this file is missing, we just move own with our lives.
+    if (e.statusCode === 403 || e.statusCode === 404) {
+      log(`Skipping ${key}, it appears to be unavailable.`)
+    } else {
+      throw e;
+    }
+  }
 }
 
-const copyReplay = async (season, key) => {
-  const path = `pending/ngs/season-${season}/key`
+const copyReplay = async (season, key, log) => {
+  const path = `pending/ngs/season-${season}/${key}`
   const blobClient = await getBlobClient(path)
 
   if (!await doesFileExistInAzure(blobClient)) {
-    await copyFileFromS3ToAzure(bucket, key, blobClient)
+    await copyFileFromS3ToAzure(bucket, key, blobClient, log)
   }
 }
+
+// E_NOTIMPL: Maybe pass this in?
+const maxCount = 100
 
 module.exports = async (log) => {
   const container = await getCosmos(matchesContainer, true)
@@ -78,9 +89,12 @@ module.exports = async (log) => {
     const response = await query.fetchNext()
 
     for (const match of response.resources) {
-      for (const key of match.games) {
-        await copyReplay(match.season, key)
+      if (count >= maxCount) {
+        break
       }
+
+      const copies = match.games.map(key => copyReplay(match.season, key, log))
+      await Promise.all(copies)
 
       await container.item(match.id, match.id).patch([
         { op: 'set', path: '/isCopied', value: true },
@@ -92,8 +106,10 @@ module.exports = async (log) => {
       count++
     }
 
-    keepGoing = response.hasMoreResults()
+    keepGoing = count < maxCount && response.hasMoreResults
   }
+
+  log(`Copied ${count} matches.`)
 
   return count
 }
