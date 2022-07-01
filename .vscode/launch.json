@@ -26,6 +26,18 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch parse replays",
+            "program": "${workspaceFolder}/commands/parseReplays.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch renew certificate",
             "program": "${workspaceFolder}/commands/renewCertificate.js",
             "skipFiles": [
