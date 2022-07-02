@@ -1,7 +1,9 @@
+const delay = require('delay')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { SecretClient } = require('@azure/keyvault-secrets')
 const AWS = require('aws-sdk')
+const fastq = require('fastq')
 const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
 const streamToBuffer = require('./lib/streamToBuffer')
 const {
@@ -51,7 +53,7 @@ const crackUrl = (url) => {
   }
 }
 
-const copyReplayToAzure = async (rawFilesystem, s3, game, log) => {
+const copyReplayToAzure = async ({ rawFilesystem, s3, game, log }) => {
   const s3Location = crackUrl(game.url)
 
   if (!s3Location) {
@@ -89,8 +91,10 @@ module.exports = async (maxCount, log) => {
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
   const s3 = await getS3()
   let mostRecent = await getMostRecent(configFilesystem)
+  const queue = fastq.promise(copyReplayToAzure, 20)
 
   let keepGoing = true
+  let queuedWork = false
   let count = 0
 
   while (keepGoing) {
@@ -110,7 +114,8 @@ module.exports = async (maxCount, log) => {
             throw new Error(`Replay ${game.replayID} has game_type of ${game.game_type}.`)
           }
 
-          await copyReplayToAzure(rawFilesystem, s3, game, log)
+          queue.push({ rawFilesystem, s3, game, log }).then(() => console.log('done'))
+          queuedWork = true
         }
 
         if (++count >= maxCount) {
@@ -118,12 +123,18 @@ module.exports = async (maxCount, log) => {
           break
         }
       }
-
-      await saveMostRecent(configFilesystem, mostRecent)
     } else {
       keepGoing = false
     }
   }
 
-  return count
+  if (queuedWork) {
+    // If we do this when we haven't put anything into the queue, the process stops immediately.
+    // I have no idea why.
+    await queue.drained()
+  }
+
+  await saveMostRecent(configFilesystem, mostRecent)
+
+  return { count, mostRecent }
 }
