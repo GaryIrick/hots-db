@@ -79,7 +79,7 @@ const copyReplayToAzure = async (rawFilesystem, s3, game, log) => {
   }
 
   const fileClient = rawFilesystem.getFileClient(blobPath)
-  await fileClient.uploadBuffer(replay)
+  await fileClient.upload(replay)
   log(`copied ${blobPath}`)
 }
 
