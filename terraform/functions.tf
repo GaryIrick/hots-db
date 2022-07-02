@@ -25,7 +25,7 @@ resource "azurerm_function_app" "hots_db_functions" {
     FUNCTION_APP_EDIT_MODE         = "readonly"
     WEBSITE_RUN_FROM_PACKAGE       = "1"
     SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
-    AZURE_LOG_LEVEL                = "verbose"
+    # AZURE_LOG_LEVEL                = "verbose"
     APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.functions_logs.instrumentation_key
     SUBSCRIPTION_ID                = data.azurerm_client_config.current.subscription_id
   }

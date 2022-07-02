@@ -60,25 +60,27 @@ const copyReplayToAzure = async (rawFilesystem, s3, game, log) => {
 
   const { bucket, key } = s3Location
   const blobPath = `pending/hp/${Math.floor(game.replayID / 1000)}/${game.replayID}-${key}`
-  let awsGetStream
+  let replay
 
   try {
-    awsGetStream = s3.getObject({
+    const awsGetStream = s3.getObject({
       Bucket: bucket,
       Key: key,
       RequestPayer: 'requester'
-    }).createReadStream()
+    })
+      .createReadStream()
+
+    replay = await streamToBuffer(awsGetStream)
   } catch (err) {
     if (err.statusCode === 403 || err.statusCode === 404) {
-      // This probably means the file is not available, just skip it
-      log(`skipping ${game.url}`)
+      log(`skipped ${blobPath}`)
       return
     }
   }
 
-  log(`copying ${blobPath}`)
   const fileClient = rawFilesystem.getFileClient(blobPath)
-  await fileClient.uploadStream(awsGetStream)
+  await fileClient.uploadBuffer(replay)
+  log(`copied ${blobPath}`)
 }
 
 module.exports = async (maxCount, log) => {
@@ -109,7 +111,6 @@ module.exports = async (maxCount, log) => {
           }
 
           await copyReplayToAzure(rawFilesystem, s3, game, log)
-          mostRecent = game.replayID
         }
 
         if (++count >= maxCount) {
