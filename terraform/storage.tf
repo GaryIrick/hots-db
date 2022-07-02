@@ -21,6 +21,12 @@ resource "azurerm_role_assignment" "my_storage_owner_access" {
   principal_id         = data.azuread_user.me.id
 }
 
+resource "azurerm_storage_container" "config" {
+  name                  = "config"
+  storage_account_name  = azurerm_storage_account.hots_db_data.name
+  container_access_type = "private"
+}
+
 resource "azurerm_storage_container" "raw" {
   name                  = "raw"
   storage_account_name  = azurerm_storage_account.hots_db_data.name

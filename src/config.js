@@ -14,6 +14,7 @@ module.exports = {
     },
     storage: {
       account: 'hotsdbdata',
+      configContainer: 'config',
       rawContainer: 'raw',
       parsedContainer: 'parsed',
       sqlContainer: 'sql'

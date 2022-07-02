@@ -1,5 +1,6 @@
 const { DefaultAzureCredential } = require('@azure/identity')
 const { SecretClient } = require('@azure/keyvault-secrets')
+const delay = require('delay')
 const agent = require('superagent')
 const { azure: { keyVault }, heroesProfile: { apiUrl, secretName } } = require('../config')
 
@@ -23,5 +24,15 @@ module.exports = async (route, params) => {
     get.query(params)
   }
 
-  return (await get).body
+  try {
+    return (await get).body
+  } catch (e) {
+    if (e.statusCode === 429) {
+      console.log('Got 429 from Heroes Profile, pausing for 550 ms.')
+      await delay(500)
+      return (await get).body
+    } else {
+      throw e
+    }
+  }
 }
