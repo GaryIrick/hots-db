@@ -64,5 +64,10 @@
     <Build Include="Functions\GetPatchSortable.sql" />
     <Build Include="Tables\Hero.sql" />
     <Build Include="Tables\Talent.sql" />
+    <Build Include="Tables\Ban.sql" />
+    <Build Include="Tables\BoxScore.sql" />
+    <Build Include="Tables\Game.sql" />
+    <Build Include="Tables\Takedown.sql" />
+    <Build Include="Tables\Player.sql" />
   </ItemGroup>
 </Project>
