@@ -10,8 +10,7 @@ const {
   aws: { credentialsSecretName }
 } = require('./config')
 
-// E_NOTIMPL: Change to heroes-profile-most-recent.txt.
-const mostRecentFilename = 'most-recent.txt'
+const mostRecentFilename = 'heroes-profile-most-recent.txt'
 
 const getS3 = async () => {
   const vaultUrl = `https://${keyVault}.vault.azure.net`
