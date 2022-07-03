@@ -50,6 +50,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch sync hero data",
+            "program": "${workspaceFolder}/commands/syncHeroData.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
+        }
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch renew certificate",
             "program": "${workspaceFolder}/commands/renewCertificate.js",
             "skipFiles": [

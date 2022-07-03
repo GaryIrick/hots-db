@@ -1,4 +1,3 @@
-const delay = require('delay')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { SecretClient } = require('@azure/keyvault-secrets')
@@ -11,6 +10,7 @@ const {
   aws: { credentialsSecretName }
 } = require('./config')
 
+// E_NOTIMPL: Change to heroes-profile-most-recent.txt.
 const mostRecentFilename = 'most-recent.txt'
 
 const getS3 = async () => {
@@ -114,7 +114,7 @@ module.exports = async (maxCount, log) => {
             throw new Error(`Replay ${game.replayID} has game_type of ${game.game_type}.`)
           }
 
-          queue.push({ rawFilesystem, s3, game, log }).then(() => console.log('done'))
+          queue.push({ rawFilesystem, s3, game, log })
           queuedWork = true
         }
 

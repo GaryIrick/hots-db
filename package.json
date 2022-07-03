@@ -33,6 +33,8 @@
     "fastq": "^1.13.0",
     "hots-parser": "^7.55.2",
     "lodash": "^4.17.21",
+    "msnodesqlv8": "^2.5.0",
+    "mssql": "^8.1.2",
     "node-forge": "^1.3.1",
     "superagent": "^7.1.6",
     "tmp-promise": "^3.0.3",

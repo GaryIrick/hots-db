@@ -27,6 +27,11 @@ module.exports = {
       matchesContainer: 'ngs-matches'
     }
   },
+  sqlServer: {
+    hostname: 'localhost',
+    database: 'replays2',
+    backupDirectory: 'D:\\MSSQL\\Backup'
+  },
   aws: {
     credentialsSecretName: 'aws-credentials'
   },
