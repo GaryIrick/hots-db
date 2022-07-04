@@ -50,6 +50,27 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch generate imports",
+            "program": "${workspaceFolder}/commands/generateImports.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch move replays",
+            "program": "${workspaceFolder}/commands/moveReplays.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch sync hero data",
             "program": "${workspaceFolder}/commands/syncHeroData.js",
             "skipFiles": [

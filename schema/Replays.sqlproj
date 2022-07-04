@@ -70,4 +70,7 @@
     <Build Include="Tables\Takedown.sql" />
     <Build Include="Tables\Player.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="Replays.refactorlog" />
+  </ItemGroup>
 </Project>

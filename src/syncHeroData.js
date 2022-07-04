@@ -2,6 +2,7 @@ const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
 const getSqlServer = require('./db/getSqlServer')
+const camelCaseRow = require('./db/camelCaseRow')
 
 const {
   azure: { storage: { account, configContainer } }
@@ -32,24 +33,26 @@ const syncHeroes = async (heroes) => {
   const db = await getSqlServer()
 
   for (const name of Object.keys(heroes)) {
-    const { id: heroId, new_role: role, type } = heroes[name]
+    const { id: heroId, attribute_id: internalName, new_role: role, type } = heroes[name]
 
     const sql = `
       MERGE Hero AS tgt
       USING
       (
         SELECT 
-          @heroId AS HeroId, 
-          @name AS Name, 
-          @role AS Role, 
+          @heroId AS HeroId,
+          @name AS Name,
+          @internalName AS InternalName,
+          @role AS Role,
           @type AS Type
       ) AS src
-        ON src.HeroId = tgt.HeroId
+        ON src.Name = tgt.Name
       WHEN NOT MATCHED THEN
-        INSERT (HeroId, Name, Role, Type)
-        VALUES (src.HeroId, src.Name, src.Role, src.Type)
+        INSERT (Name, InternalName, Role, Type)
+        VALUES (src.Name, src.InternalName, src.Role, src.Type)
       WHEN MATCHED THEN UPDATE SET
         tgt.Name = src.Name,
+        tgt.InternalName = src.InternalName,
         tgt.Role = src.Role,
         tgt.Type = src.Type
     `
@@ -58,12 +61,19 @@ const syncHeroes = async (heroes) => {
       .request()
       .input('heroId', heroId)
       .input('name', name)
+      .input('internalName', internalName)
       .input('role', role)
       .input('type', type)
       .query(sql)
   }
 
+  const allHeroes = await db
+    .request()
+    .query('SELECT Name, InternalName, Role, Type FROM Hero ORDER BY HeroId')
+
   await db.close()
+
+  return allHeroes.recordset.map(camelCaseRow)
 }
 
 const syncTalents = async (talents) => {
@@ -88,20 +98,20 @@ const syncTalents = async (talents) => {
       USING 
       (
         SELECT 
-        @TalentId AS TalentId, 
-        @heroId AS HeroId,
-        @tier AS Tier,
-        @name AS Name,
-        @internalName AS InternalName,
-        @description AS Description,
-        @sortOrder AS SortOrder,
-        @icon As Icon,
-        @isActive AS IsActive
+          (SELECT h.HeroId FROM Hero h WHERE h.InternalName = @heroInternalName) AS HeroId,
+          @tier AS Tier,
+          @name AS Name,
+          @internalName AS InternalName,
+          @description AS Description,
+          @sortOrder AS SortOrder,
+          @icon As Icon,
+          @isActive AS IsActive
       ) AS src
-        ON src.TalentId = tgt.TalentId
+        ON src.HeroId = tgt.HeroId
+        AND src.InternalName = tgt.InternalName
       WHEN NOT MATCHED THEN
-        INSERT (TalentId, HeroId, Tier, Name, InternalName, Description, SortOrder, Icon, IsActive)
-        VALUES (src.TalentId, src.HeroId, src.Tier, src.Name, src.InternalName, src.Description, src.SortOrder, src.Icon, src.IsActive)
+        INSERT (HeroId, Tier, Name, InternalName, Description, SortOrder, Icon, IsActive)
+        VALUES (src.HeroId, src.Tier, src.Name, src.InternalName, src.Description, src.SortOrder, src.Icon, src.IsActive)
       WHEN MATCHED THEN UPDATE SET
         tgt.Tier = src.Tier,
         tgt.HeroId = src.HeroId,
@@ -115,8 +125,7 @@ const syncTalents = async (talents) => {
 
       await db
         .request()
-        .input('talentId', talent.talent_id)
-        .input('heroId', talent.id)
+        .input('heroInternalName', talent.attribute_id)
         .input('tier', getTier(talent.level))
         .input('name', talent.title)
         .input('internalName', talent.talent_name)
@@ -128,19 +137,46 @@ const syncTalents = async (talents) => {
     }
   }
 
+  const allTalents = await db
+    .request()
+    .query(`
+      SELECT
+        h.Name AS Hero,
+        t.Tier,
+        t.Name,
+        t.InternalName,
+        t.Description,
+        t.SortOrder,
+        t.Icon,
+        t.IsActive
+      FROM
+        Talent t
+        JOIN Hero h
+          ON h.HeroId = t.HeroId
+      ORDER BY
+        h.Name,
+        t.Tier,
+        t.SortOrder
+    `)
+
   await db.close()
+
+  return allTalents.recordset
+    .map(camelCaseRow)
+    .map(r => Object.assign(r, { isActive: !!r.isActive }))
 }
 
 module.exports = async (log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const configFilesystem = datalake.getFileSystemClient(configContainer)
-  const heroesFile = configFilesystem.getFileClient('heroes.json')
-  const talentsFile = configFilesystem.getFileClient('talents.json')
-  const heroes = await getFromHeroesProfile('Heroes')
-  const talents = await getFromHeroesProfile('Heroes/Talents')
-  await heroesFile.upload(Buffer.from(JSON.stringify(heroes)))
-  await talentsFile.upload(Buffer.from(JSON.stringify(talents)))
 
-  await syncHeroes(heroes)
-  await syncTalents(talents)
+  const heroes = await getFromHeroesProfile('Heroes')
+  const allHeroes = await syncHeroes(heroes)
+  const heroesFile = configFilesystem.getFileClient('heroes.json')
+  await heroesFile.upload(Buffer.from(JSON.stringify(allHeroes)))
+
+  const talents = await getFromHeroesProfile('Heroes/Talents')
+  const allTalents = await syncTalents(talents)
+  const talentsFile = configFilesystem.getFileClient('talents.json')
+  await talentsFile.upload(Buffer.from(JSON.stringify(allTalents)))
 }

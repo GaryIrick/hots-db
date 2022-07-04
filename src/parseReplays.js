@@ -2,43 +2,75 @@ const path = require('path')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { file: getTempFile } = require('tmp-promise')
+const fastq = require('fastq')
 const parser = require('hots-parser')
+const putCompressedJson = require('./lib/putCompressedJson')
+const moveBlob = require('./lib/moveBlob')
+
 const {
   azure: { storage: { account, rawContainer, parsedContainer } }
 } = require('./config')
 
-const parseReplay = async (rawFilesystem, parsedFilesystem, blobName) => {
-  const rawFileClient = rawFilesystem.getFileClient(blobName)
-  const processedBlobName = blobName.replace('pending/', 'processed/')
-  const parsedBlobName = blobName.replace(path.extname(blobName), '.json')
-  const { path: tempPath, cleanup } = await getTempFile()
-  await rawFileClient.readToFile(tempPath)
-  const parse = parser.processReplay(tempPath, { getBMData: false, overrideVerifiedBuild: true })
-  const json = JSON.stringify(parse)
-  const parsedFileClient = parsedFilesystem.getFileClient(parsedBlobName)
-  await parsedFileClient.upload(Buffer.from(json))
-  const rawDirectoryClient = rawFilesystem.getDirectoryClient(path.dirname(processedBlobName))
-  await rawDirectoryClient.createIfNotExists()
-  await rawFileClient.move(processedBlobName)
-  await cleanup()
+const parseReplay = async ({ rawFilesystem, parsedFilesystem, blobName, log }) => {
+  log(`starting ${blobName}`)
+
+  try {
+    const rawFileClient = rawFilesystem.getFileClient(blobName)
+    const { path: tempPath, cleanup } = await getTempFile()
+    await rawFileClient.readToFile(tempPath)
+    const parse = parser.processReplay(tempPath, { getBMData: false, overrideVerifiedBuild: true })
+
+    if (parse.status === 1) {
+      const parsedBlobName = blobName.replace(path.extname(blobName), '.json.gz')
+      await putCompressedJson(parsedFilesystem, parsedBlobName, parse)
+      await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'processed/'))
+      log(`parsed ${blobName}`)
+    } else {
+      throw new Error(`Bad parse: status=${parse.status}`)
+    }
+
+    await cleanup()
+  } catch (err) {
+    await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'error/'))
+    log(`error with ${blobName}`)
+  }
 }
 
 module.exports = async (maxCount, log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
   const parsedFilesystem = datalake.getFileSystemClient(parsedContainer)
+  const queue = fastq.promise(parseReplay, 20)
 
+  let keepGoing = true
+  let queuedWork = false
   let count = 0
 
-  for await (const p of rawFilesystem.listPaths({ path: 'pending/', recursive: true })) {
-    if (!p.isDirectory) {
-      log(`parsing ${p.name}`)
-      await parseReplay(rawFilesystem, parsedFilesystem, p.name)
+  for await (const page of rawFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 100 })) {
+    if (!keepGoing) {
+      break
+    }
 
-      if (++count >= maxCount) {
-        return count
+    for (const item of page.pathItems) {
+      if (!keepGoing) {
+        break
+      }
+
+      if (!item.isDirectory) {
+        queue.push({ rawFilesystem, parsedFilesystem, blobName: item.name, log })
+        queuedWork = true
+
+        if (++count >= maxCount) {
+          keepGoing = false
+        }
       }
     }
+  }
+
+  if (queuedWork) {
+    // If we do this when we haven't put anything into the queue, the process stops immediately.
+    // I have no idea why.
+    await queue.drained()
   }
 
   return count

@@ -60,7 +60,7 @@ const copyReplayToAzure = async ({ rawFilesystem, s3, game, log }) => {
   }
 
   const { bucket, key } = s3Location
-  const blobPath = `pending/hp/${Math.floor(game.replayID / 1000)}/${game.replayID}-${key}`
+  const blobPath = `pending/hp/${Math.floor(game.replayID / 10000)}/${game.replayID}-${key}`
   let replay
 
   try {

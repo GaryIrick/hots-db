@@ -1,6 +1,6 @@
 CREATE TABLE Talent
 (
-    TalentId smallint NOT NULL CONSTRAINT PK_Talent PRIMARY KEY,
+    TalentId smallint IDENTITY(1, 1) NOT NULL CONSTRAINT PK_Talent PRIMARY KEY,
     HeroId tinyint NOT NULL CONSTRAINT FK_Talent_Hero REFERENCES Hero(HeroId),
     Tier tinyint NOT NULL,
     Name nvarchar(100) NOT NULL,
@@ -10,4 +10,7 @@ CREATE TABLE Talent
     Icon nvarchar(100) NOT NULL,
     IsActive bit NOT NULL
 );
+GO
+
+CREATE UNIQUE INDEX UX_Talent_Hero_InternalName ON Talent(HeroId, InternalName)
 GO
