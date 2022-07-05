@@ -62,15 +62,6 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch move replays",
-            "program": "${workspaceFolder}/commands/moveReplays.js",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
             "name": "Launch sync hero data",
             "program": "${workspaceFolder}/commands/syncHeroData.js",
             "skipFiles": [
