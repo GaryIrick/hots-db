@@ -5,6 +5,7 @@ const { file: getTempFile } = require('tmp-promise')
 const fastq = require('fastq')
 const parser = require('hots-parser')
 const putCompressedJson = require('./lib/putCompressedJson')
+const addAdditionalParseInfo = require('./lib/addAdditionalParseInfo')
 const moveBlob = require('./lib/moveBlob')
 
 const {
@@ -21,6 +22,7 @@ const parseReplay = async ({ rawFilesystem, parsedFilesystem, blobName, log }) =
     const parse = parser.processReplay(tempPath, { getBMData: false, overrideVerifiedBuild: true })
 
     if (parse.status === 1) {
+      addAdditionalParseInfo(tempPath, parse)
       const parsedBlobName = blobName.replace(path.extname(blobName), '.json.gz')
       await putCompressedJson(parsedFilesystem, parsedBlobName, parse)
       await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'processed/'))
