@@ -75,10 +75,7 @@ const copyReplay = async (season, key, log) => {
   }
 }
 
-// E_NOTIMPL: Maybe pass this in?
-const maxCount = 100
-
-module.exports = async (log) => {
+module.exports = async (maxCount, log) => {
   const container = await getCosmos(matchesContainer, true)
   let count = 0
   let keepGoing = true
