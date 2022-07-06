@@ -19,7 +19,7 @@ const parseReplay = async ({ rawFilesystem, parsedFilesystem, blobName, log }) =
     const rawFileClient = rawFilesystem.getFileClient(blobName)
     const { path: tempPath, cleanup } = await getTempFile()
     await rawFileClient.readToFile(tempPath)
-    const parse = parser.processReplay(tempPath, { getBMData: true, overrideVerifiedBuild: true })
+    const parse = parser.processReplay(tempPath, { getBMData: false, overrideVerifiedBuild: true })
 
     if (parse.status === 1) {
       addAdditionalParseInfo(tempPath, parse)
