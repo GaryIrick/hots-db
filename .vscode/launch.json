@@ -38,6 +38,18 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch parse single replay",
+            "program": "${workspaceFolder}/commands/parseSingleReplay.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "t:\\scratch\\CMAD\\ngs_2-4-2022_CM_After_Dark_vs_BFT_Orion_Alterac_Pass.stormReplay"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch parse replays",
             "program": "${workspaceFolder}/commands/parseReplays.js",
             "skipFiles": [

@@ -1,6 +1,7 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
+const putUncompressedJson = require('./lib/putUncompressedJson')
 const getSqlServer = require('./db/getSqlServer')
 const camelCaseRow = require('./db/camelCaseRow')
 
@@ -172,11 +173,9 @@ module.exports = async (log) => {
 
   const heroes = await getFromHeroesProfile('Heroes')
   const allHeroes = await syncHeroes(heroes)
-  const heroesFile = configFilesystem.getFileClient('heroes.json')
-  await heroesFile.upload(Buffer.from(JSON.stringify(allHeroes)))
+  await putUncompressedJson(configFilesystem, 'heroes.json', allHeroes)
 
   const talents = await getFromHeroesProfile('Heroes/Talents')
   const allTalents = await syncTalents(talents)
-  const talentsFile = configFilesystem.getFileClient('talents.json')
-  await talentsFile.upload(Buffer.from(JSON.stringify(allTalents)))
+  await putUncompressedJson(configFilesystem, 'talents.json', allTalents)
 }
