@@ -90,8 +90,9 @@ module.exports = async (maxCount, log) => {
         break
       }
 
-      const copies = match.games.map(key => copyReplay(match.season, key, log))
-      await Promise.all(copies)
+      for (const game of match.games) {
+        await copyReplay(match.season, game, log)
+      }
 
       await container.item(match.id, match.id).patch([
         { op: 'set', path: '/isCopied', value: true },

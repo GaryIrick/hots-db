@@ -21,7 +21,9 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "args": []
+            "args": [
+                "1"
+            ]
         },
         {
             "type": "node",
