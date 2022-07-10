@@ -15,18 +15,25 @@ const {
   }
 } = require('./config')
 
-const challengeRecord = '_acme-challenge'
-
-const addChallengeToDns = async (authz, challenge, keyAuthorization) => {
-  const { credentials, subscriptionId } = getServiceCredentials()
-  const client = new DnsManagementClient(credentials, subscriptionId)
-  await client.recordSets.createOrUpdate(domainNamesResourceGroup, domain, challengeRecord, 'TXT', { ttl: 60, txtRecords: [{ value: [keyAuthorization] }] })
+const getChallengeRecord = (hostname) => {
+  if (hostname === domain) {
+    return '_acme-challenge'
+  } else {
+    return `_acme-challenge.${hostname.replace(`.${domain}`, '')}`
+  }
 }
 
-const removeChallengeFromDns = async (authz, challenge, keyAuthorization) => {
+const addChallengeToDns = async (authz, challenge, keyAuthorization, hostname) => {
   const { credentials, subscriptionId } = getServiceCredentials()
   const client = new DnsManagementClient(credentials, subscriptionId)
-  await client.recordSets.delete(domainNamesResourceGroup, domain, challengeRecord, 'TXT')
+
+  await client.recordSets.createOrUpdate(domainNamesResourceGroup, domain, getChallengeRecord(hostname), 'TXT', { ttl: 60, txtRecords: [{ value: [keyAuthorization] }] })
+}
+
+const removeChallengeFromDns = async (authz, challenge, keyAuthorization, hostname) => {
+  const { credentials, subscriptionId } = getServiceCredentials()
+  const client = new DnsManagementClient(credentials, subscriptionId)
+  await client.recordSets.delete(domainNamesResourceGroup, domain, getChallengeRecord(hostname), 'TXT')
 }
 
 const generateNewCertificate = async (log) => {
@@ -46,15 +53,17 @@ const generateNewCertificate = async (log) => {
 
   const order = await client.createOrder({
     identifiers: [
-      { type: 'dns', value: domain }
+      { type: 'dns', value: domain },
+      { type: 'dns', value: `www.${domain}` }
     ]
   })
 
   log('created order')
 
-  const authorizations = client.getAuthorizations(order)
+  const authorizations = await client.getAuthorizations(order)
 
-  const promises = (await authorizations).map(async (authz) => {
+  for (const authz of authorizations) {
+    console.log(`handling authorization for ${authz.identifier.value}`)
     const { challenges } = authz
     // We only know how to handle DNS challenges in this code.
     const challenge = challenges.filter(c => c.type === 'dns-01')[0]
@@ -62,7 +71,7 @@ const generateNewCertificate = async (log) => {
 
     try {
       log('adding record to DNS')
-      await addChallengeToDns(authz, challenge, keyAuthorization)
+      await addChallengeToDns(authz, challenge, keyAuthorization, authz.identifier.value)
       log('verifying challenge')
       await client.verifyChallenge(authz, challenge)
       log('completing challenge')
@@ -71,14 +80,16 @@ const generateNewCertificate = async (log) => {
       await client.waitForValidStatus(challenge)
     } finally {
       log('removing record from DNS')
-      await removeChallengeFromDns(authz, challenge, keyAuthorization)
+      await removeChallengeFromDns(authz, challenge, keyAuthorization, authz.identifier.value)
+      log('removed record from DNS')
     }
-  })
 
-  await Promise.all(promises)
+    console.log('finished with authorization')
+  }
 
   const [keyPem, csrPem] = await acme.forge.createCsr({
-    commonName: domain
+    commonName: domain,
+    altNames: [`www.${domain}`]
   })
 
   console.log('finalizing order')
@@ -116,7 +127,7 @@ const uploadCertificate = async (certBytes, bitLength, password) => {
   return uploadedCert
 }
 
-const updateEndpoint = async () => {
+const updateEndpoints = async () => {
   const { credentials, subscriptionId } = getServiceCredentials()
   const cdnClient = new CdnManagementClient(credentials, subscriptionId)
   const endpoints = await cdnClient.customDomains.listByEndpoint(resourceGroup, cdnProfile, cdnEndpoint)
@@ -143,9 +154,11 @@ const updateEndpoint = async () => {
 module.exports = async (log) => {
   try {
     const { bytes, bitLength, password } = await generateNewCertificate(log)
+    console.log('got new certificate')
     await uploadCertificate(bytes, bitLength, password)
-    await updateEndpoint()
-    log('updated endpoint')
+    console.log('uploaded certificates')
+    await updateEndpoints()
+    log('updated endpoints')
     return true
   } catch (err) {
     log('failed to renew certificate')

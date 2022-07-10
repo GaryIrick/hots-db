@@ -15,7 +15,7 @@ resource "azurerm_dns_txt_record" "api_txt" {
   name                = "asuid.${azurerm_dns_cname_record.api_cname.name}"
   resource_group_name = local.domain_names_resource_group
   zone_name           = data.azurerm_dns_zone.hots_helper.name
-  ttl                 = 300
+  ttl                 = 60
   record {
     value = azurerm_function_app.hots_db_functions.custom_domain_verification_id
   }
@@ -36,8 +36,6 @@ resource "azurerm_dns_cname_record" "www_alias" {
   ttl                 = 60
   target_resource_id  = azurerm_cdn_endpoint.web.id
 }
-
-# Need this?
 
 resource "azurerm_dns_cname_record" "cdnverify_cname" {
   name                = "cdnverify"
