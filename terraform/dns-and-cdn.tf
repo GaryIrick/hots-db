@@ -44,7 +44,7 @@ resource "azurerm_dns_cname_record" "cdnverify_cname" {
   resource_group_name = local.domain_names_resource_group
   zone_name           = data.azurerm_dns_zone.hots_helper.name
   ttl                 = 60
-  record              = "cdnverify.${azurerm_cdn_endpoint.web.host_name}"
+  record              = "cdnverify.${azurerm_cdn_endpoint.web.fqdn}"
 }
 
 resource "azurerm_app_service_custom_hostname_binding" "api_hostname_binding" {

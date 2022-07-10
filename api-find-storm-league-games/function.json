@@ -7,7 +7,7 @@
       "name": "req",
       "route": "find-storm-league-games",
       "methods": [
-        "get"
+        "post"
       ]
     },
     {

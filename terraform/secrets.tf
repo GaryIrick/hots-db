@@ -37,6 +37,11 @@ resource "azurerm_key_vault_secret" "aws_credentials" {
     ignore_changes = [value]
   }
 }
+resource "azurerm_key_vault_secret" "functions_key" {
+  name         = "functions-key"
+  key_vault_id = azurerm_key_vault.key_vault.id
+  value        = data.azurerm_function_app_host_keys.function_keys.default_function_key
+}
 
 resource "azurerm_key_vault_access_policy" "secret_policy_for_me" {
   key_vault_id = azurerm_key_vault.key_vault.id
@@ -46,7 +51,9 @@ resource "azurerm_key_vault_access_policy" "secret_policy_for_me" {
   secret_permissions = [
     "Get",
     "Set",
-    "List"
+    "List",
+    "Delete",
+    "Purge"
   ]
 
   certificate_permissions = [
@@ -54,7 +61,9 @@ resource "azurerm_key_vault_access_policy" "secret_policy_for_me" {
     "List",
     "Update",
     "Create",
-    "Import"
+    "Import",
+    "Delete",
+    "Purge"
   ]
 }
 
@@ -65,5 +74,16 @@ resource "azurerm_key_vault_access_policy" "function_secret_policy" {
 
   secret_permissions = [
     "Get"
+  ]
+}
+
+resource "azurerm_key_vault_access_policy" "factory_secret_policy" {
+  key_vault_id = azurerm_key_vault.key_vault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_data_factory.factory.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
   ]
 }

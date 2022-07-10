@@ -7,7 +7,7 @@
       "name": "req",
       "route": "parse-replays",
       "methods": [
-        "get"
+        "post"
       ]
     },
     {

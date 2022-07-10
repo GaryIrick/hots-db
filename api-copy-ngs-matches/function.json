@@ -7,7 +7,7 @@
       "name": "req",
       "route": "copy-ngs-matches",
       "methods": [
-        "get"
+        "post"
       ]
     },
     {

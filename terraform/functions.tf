@@ -32,6 +32,7 @@ resource "azurerm_function_app" "hots_db_functions" {
   identity {
     type = "SystemAssigned"
   }
+
   site_config {
     cors {
       allowed_origins = [
@@ -40,6 +41,13 @@ resource "azurerm_function_app" "hots_db_functions" {
       ]
     }
   }
+
+  tags = {
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_application_insights" "functions_logs" {
@@ -47,4 +55,13 @@ resource "azurerm_application_insights" "functions_logs" {
   location            = local.location
   resource_group_name = local.resource_group
   application_type    = "web"
+}
+
+
+data "azurerm_function_app_host_keys" "function_keys" {
+  name                = azurerm_function_app.hots_db_functions.name
+  resource_group_name = local.resource_group
+  depends_on = [
+    azurerm_function_app.hots_db_functions
+  ]
 }
