@@ -1,27 +1,65 @@
-resource "azurerm_app_service_plan" "consumption" {
-  name                = "hots-db-on-demand"
+resource "azurerm_service_plan" "consumption" {
+  name                = "hots-db-on-demand-windows"
   location            = local.location
   resource_group_name = local.resource_group
-  kind                = "FunctionApp"
-  sku {
-    tier = "Dynamic"
-    size = "Y1"
-  }
+  os_type             = "Windows"
+  sku_name            = "Y1"
 }
 
-resource "azurerm_function_app" "hots_db_functions" {
-  name                       = "hots-db-functions"
-  location                   = local.location
-  resource_group_name        = local.resource_group
-  app_service_plan_id        = azurerm_app_service_plan.consumption.id
-  storage_account_name       = azurerm_storage_account.functions.name
-  storage_account_access_key = azurerm_storage_account.functions.primary_access_key
-  version                    = "~4"
-  https_only                 = true
+# resource "azurerm_function_app" "hots_db_functions" {
+#   name                       = "hots-db-functions"
+#   location                   = local.location
+#   resource_group_name        = local.resource_group
+#   app_service_plan_id        = azurerm_service_plan.consumption.id
+#   storage_account_name       = azurerm_storage_account.functions.name
+#   storage_account_access_key = azurerm_storage_account.functions.primary_access_key
+#   version                    = "~4"
+#   https_only                 = true
+#   app_settings = {
+#     https_only                     = true
+#     FUNCTIONS_WORKER_RUNTIME       = "node"
+#     WEBSITE_NODE_DEFAULT_VERSION   = "~14"
+#     FUNCTION_APP_EDIT_MODE         = "readonly"
+#     WEBSITE_RUN_FROM_PACKAGE       = "1"
+#     SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
+#     # AZURE_LOG_LEVEL                = "verbose"
+#     APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.functions_logs.instrumentation_key
+#     SUBSCRIPTION_ID                = data.azurerm_client_config.current.subscription_id
+#   }
+#   identity {
+#     type = "SystemAssigned"
+#   }
+
+#   site_config {
+#     cors {
+#       allowed_origins = [
+#         "https://hots-helper.com",
+#         "https://www.hots-helper.com",
+#       ]
+#     }
+#   }
+
+#   tags = {
+#   }
+
+#   lifecycle {
+#     ignore_changes = [tags]
+#   }
+# }
+
+resource "azurerm_windows_function_app" "hots_db_functions" {
+  name                        = "hots-db-functions"
+  location                    = local.location
+  resource_group_name         = local.resource_group
+  service_plan_id             = azurerm_service_plan.consumption.id
+  storage_account_name        = azurerm_storage_account.functions.name
+  storage_account_access_key  = azurerm_storage_account.functions.primary_access_key
+  functions_extension_version = "~4"
+  https_only                  = true
   app_settings = {
-    https_only                     = true
-    FUNCTIONS_WORKER_RUNTIME       = "node"
-    WEBSITE_NODE_DEFAULT_VERSION   = "~14"
+    https_only               = true
+    FUNCTIONS_WORKER_RUNTIME = "node"
+    # WEBSITE_NODE_DEFAULT_VERSION   = "~14"
     FUNCTION_APP_EDIT_MODE         = "readonly"
     WEBSITE_RUN_FROM_PACKAGE       = "1"
     SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
@@ -34,6 +72,10 @@ resource "azurerm_function_app" "hots_db_functions" {
   }
 
   site_config {
+    application_insights_key = azurerm_application_insights.functions_logs.instrumentation_key
+    application_stack {
+      node_version = "~14"
+    }
     cors {
       allowed_origins = [
         "https://hots-helper.com",
@@ -59,9 +101,15 @@ resource "azurerm_application_insights" "functions_logs" {
 
 
 data "azurerm_function_app_host_keys" "function_keys" {
-  name                = azurerm_function_app.hots_db_functions.name
+  name                = azurerm_windows_function_app.hots_db_functions.name
   resource_group_name = local.resource_group
   depends_on = [
-    azurerm_function_app.hots_db_functions
+    azurerm_windows_function_app.hots_db_functions
   ]
+}
+
+
+data "azurerm_function_app" "hots_db_functions_reference" {
+  name                = azurerm_windows_function_app.hots_db_functions.name
+  resource_group_name = local.resource_group
 }
