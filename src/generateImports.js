@@ -1,10 +1,11 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const fastq = require('fastq')
-const { max, orderBy, findIndex } = require('lodash')
+const { orderBy, findIndex } = require('lodash')
 const getCompressedJson = require('./lib/getCompressedJson')
 const putCompressedJson = require('./lib/putCompressedJson')
 const getHeroByInternalName = require('./lib/getHeroByInternalName')
+const getRegion = require('./lib/getRegion')
 const moveBlob = require('./lib/moveBlob')
 
 const {
@@ -13,7 +14,7 @@ const {
 const moment = require('moment')
 
 const loopsToGameSeconds = (loops) => {
-  return Math.floor((loops - 610) / 16)
+  return (loops - 610) / 16
 }
 
 const getStatsForPlayer = (parse, playerHandle) => {
@@ -91,28 +92,6 @@ const getBansForTeam = async (parse, index) => {
   return orderBy(bans, b => b.absolute).map(b => b.hero)
 }
 
-const getXpForTeam = (parse, team) => {
-  const allXp = []
-  const lastTime = max(parse.match.XPBreakdown.map(xp => xp.loop))
-
-  for (const xp of parse.match.XPBreakdown.filter(x => x.team === team)) {
-    allXp.push({
-      // Push the final XP time forward a full second, in case the last two
-      // XP records are so close they round down to the same second.
-      time: loopsToGameSeconds(xp.loop) + (xp.loop === lastTime ? 1 : 0),
-      minionXp: loopsToGameSeconds(xp.breakdown.MinionXP),
-      creepXp: loopsToGameSeconds(xp.breakdown.CreepXP),
-      structureXp: loopsToGameSeconds(xp.breakdown.StructureXP),
-      heroXp: loopsToGameSeconds(xp.breakdown.HeroXP),
-      trickleXp: loopsToGameSeconds(xp.breakdown.TrickleXP),
-      theoreticalMinionXp: loopsToGameSeconds(xp.theoreticalMinionXP),
-      isFinalXp: xp.time === lastTime
-    })
-  }
-
-  return allXp
-}
-
 const getTakedowns = (parse, allPlayers) => {
   const takedowns = []
   for (const player of allPlayers) {
@@ -129,35 +108,50 @@ const getTakedowns = (parse, allPlayers) => {
   return takedowns
 }
 
+const getMessages = (parse, allPlayers) => {
+  const messages = []
+
+  for (const message of (parse.match.messages || []).filter(m => m.type === 0)) {
+    messages.push({
+      player: message.player,
+      text: message.text,
+      time: loopsToGameSeconds(message.loop)
+    })
+  }
+
+  return messages
+}
+
 const getSqlImport = async (parse) => {
-  const { match, match: { version, winner, firstPickWin } } = parse
+  const { match, match: { region: regionId, version, winner, firstPickWin } } = parse
   const game = {
     fingerprint: parse.fingerprint,
+    region: getRegion(regionId),
     map: match.map,
     date: moment(match.date).format('YYYY-MM-DD'),
     patch: `${version.m_major}.${version.m_minor}.${version.m_revision}.${version.m_build}`,
-    length: loopsToGameSeconds(parse.match.loopLength)
+    length: loopsToGameSeconds(parse.match.loopLength),
+    winningTeam: winner === 0 ? 1 : 2,
+    firstPickTeam: firstPickWin ? (winner === 0 ? 1 : 2) : (winner === 0 ? 2 : 1)
   }
 
   const team1 = {
+    team: 1,
     players: getPlayersForTeam(parse, 0),
-    winner: winner === 0,
-    bans: await getBansForTeam(parse, 0),
-    xp: getXpForTeam(parse, 0),
-    firstPick: firstPickWin ? (winner === 0) : (winner === 1)
+    bans: await getBansForTeam(parse, 0)
   }
 
   const team2 = {
-    winner: winner === 1,
+    team: 2,
     players: getPlayersForTeam(parse, 1),
-    bans: getBansForTeam(parse, 1),
-    xp: getXpForTeam(parse, 1),
-    firstPick: firstPickWin ? (winner === 1) : (winner === 0)
+    bans: await getBansForTeam(parse, 1)
   }
 
-  const allPlayers = team1.players.concat(team2.players)
   game.teams = [team1, team2]
+
+  const allPlayers = team1.players.concat(team2.players)
   game.takedowns = getTakedowns(parse, allPlayers)
+  game.messages = getMessages(parse, allPlayers)
 
   return game
 }
@@ -175,15 +169,15 @@ const generateImports = async ({ parsedFilesystem, sqlImportFilesystem, sparkImp
     const parse = await getCompressedJson(parsedFilesystem, blobName)
     const sqlImport = await getSqlImport(parse)
     await putCompressedJson(sqlImportFilesystem, blobName.replace('.json.gz', '-sql.json.gz'), sqlImport)
-    const sparkImport = await getSparkImport(parse)
-    await putCompressedJson(sparkImportFilesystem, blobName.replace('.json.gz', '-spark.json.gz'), sparkImport)
+    // const sparkImport = await getSparkImport(parse)
+    // await putCompressedJson(sparkImportFilesystem, blobName.replace('.json.gz', '-spark.json.gz'), sparkImport)
     log(`generated imports for ${blobName}`)
     // E_NOTIMPL:  Once we are happy with this code, mark the file as "processed".
     // await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'processed/'))
   } catch (err) {
     // E_NOTIMPL:  Once we are happy with this code, mark the file as "error".
     // await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'error/'))
-    log(`error with ${blobName}`)
+    log(`error with ${blobName}: ${err}`)
   }
 }
 

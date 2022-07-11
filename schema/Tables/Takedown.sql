@@ -1,7 +1,7 @@
 CREATE TABLE Takedown
 (
     TakedownId uniqueidentifier NOT NULL CONSTRAINT PK_Takedown PRIMARY KEY,
-    GameId uniqueidentifier NOT NULL CONSTRAINT FK_TakeDown_GameId REFERENCES Game(GameId) ON DELETE CASCADE,
+    GameId uniqueidentifier NOT NULL CONSTRAINT FK_Takedown_GameId REFERENCES Game(GameId) ON DELETE CASCADE,
     VictimId tinyint NOT NULL CONSTRAINT FK_Takedown_Victim REFERENCES Hero(HeroId),
     Time smallint NOT NULL,
     Killer1Id tinyint NULL CONSTRAINT FK_Takedown_Killer1 REFERENCES Hero(HeroId),
@@ -12,5 +12,5 @@ CREATE TABLE Takedown
 );
 GO
 CREATE INDEX IX_Takedown_GameId
-    ON TakeDown(GameId);
+    ON Takedown(GameId);
 GO

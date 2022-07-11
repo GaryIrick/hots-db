@@ -471,3 +471,4 @@ FodyWeavers.xsd
 **/.terraform/*
 
 hots-db.zip
+**/*.refactorlog

@@ -69,6 +69,7 @@
     <Build Include="Tables\Game.sql" />
     <Build Include="Tables\Takedown.sql" />
     <Build Include="Tables\Player.sql" />
+    <Build Include="Tables\BattleTag.sql" />
   </ItemGroup>
   <ItemGroup>
     <RefactorLog Include="Replays.refactorlog" />

@@ -41,12 +41,12 @@ const syncHeroes = async (heroes) => {
       USING
       (
         SELECT 
-          @heroId AS HeroId,
-          @name AS Name,
-          @internalName AS InternalName,
-          @role AS Role,
-          @type AS Type
-      ) AS src
+          @heroId,
+          @name,
+          @internalName,
+          @role,
+          @type
+      ) AS src (HeroId, Name, InternalName, Role, Type)
         ON src.Name = tgt.Name
       WHEN NOT MATCHED THEN
         INSERT (Name, InternalName, Role, Type)
@@ -99,15 +99,15 @@ const syncTalents = async (talents) => {
       USING 
       (
         SELECT 
-          (SELECT h.HeroId FROM Hero h WHERE h.InternalName = @heroInternalName) AS HeroId,
-          @tier AS Tier,
-          @name AS Name,
-          @internalName AS InternalName,
-          @description AS Description,
-          @sortOrder AS SortOrder,
-          @icon As Icon,
-          @isActive AS IsActive
-      ) AS src
+          (SELECT h.HeroId FROM Hero h WHERE h.InternalName = @heroInternalName),
+          @tier,
+          @name,
+          @internalName,
+          @description,
+          @sortOrder,
+          @icon,
+          @isActive
+      ) AS src (HeroId, Tier, Name, InternalName, Description, SortOrder, Icon, IsActive)
         ON src.HeroId = tgt.HeroId
         AND src.InternalName = tgt.InternalName
       WHEN NOT MATCHED THEN

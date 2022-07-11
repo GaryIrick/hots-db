@@ -34,7 +34,7 @@ const parseReplay = async ({ rawFilesystem, parsedFilesystem, blobName, log }) =
     await cleanup()
   } catch (err) {
     await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'error/'))
-    log(`error with ${blobName}`)
+    log(`error with ${blobName}: ${err}`)
   }
 }
 

@@ -70,7 +70,19 @@
                 "<node_internals>/**"
             ],
             "args": [
-                "1"
+                "10"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch import replays into SQL",
+            "program": "${workspaceFolder}/commands/importReplaysIntoSql.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "10"
             ]
         },
         {
