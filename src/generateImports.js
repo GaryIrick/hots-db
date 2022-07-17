@@ -2,6 +2,7 @@ const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const fastq = require('fastq')
 const { orderBy, findIndex } = require('lodash')
+const fixHeroName = require('./lib/fixHeroName')
 const getCompressedJson = require('./lib/getCompressedJson')
 const putCompressedJson = require('./lib/putCompressedJson')
 const changeExtension = require('./lib/changeExtension')
@@ -63,7 +64,7 @@ const getPlayersForTeam = (parse, index) => {
       name: team.names[i],
       // It appears that some regions (CN) do not have tags, just names.
       tag: parse.players[team.ids[i]].tag || '0000',
-      hero: team.heroes[i],
+      hero: fixHeroName(team.heroes[i]),
       party: parse.players[team.ids[i]].party,
       stats: getStatsForPlayer(parse, team.ids[i]),
       talents: getTalentsForPlayer(parse, team.ids[i])
@@ -90,7 +91,7 @@ const getBansForTeam = async (parse, index) => {
     }
   }
 
-  return orderBy(bans, b => b.absolute).map(b => b.hero)
+  return orderBy(bans, b => b.absolute)
 }
 
 const getTakedowns = (parse, allPlayers) => {
@@ -99,8 +100,8 @@ const getTakedowns = (parse, allPlayers) => {
     for (const death of parse.players[player.handle].deaths) {
       const takedown = {
         time: loopsToGameSeconds(death.loop),
-        victim: death.victim.hero,
-        killers: death.killers.map(k => k.hero)
+        victim: fixHeroName(death.victim.hero),
+        killers: death.killers.map(k => fixHeroName(k.hero))
       }
       takedowns.push(takedown)
     }
@@ -181,18 +182,15 @@ const generateImports = async ({ parsedFilesystem, sqlImportFilesystem, sparkImp
   log(`starting ${blobName}`)
 
   try {
-    // E_NOTIMPL: Can we use the same format for SQL and Spark?  Could simplify some things.
     const parse = await getCompressedJson(parsedFilesystem, blobName)
     const jsonFilename = changeExtension(blobName, 'import.json.gz')
     const json = await getImportJson(parse)
     await putCompressedJson(sqlImportFilesystem, jsonFilename, json)
     await putCompressedJson(sparkImportFilesystem, jsonFilename, json)
     log(`generated imports for ${blobName}`)
-    // E_NOTIMPL:  Once we are happy with this code, mark the file as "processed".
-    // await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'processed/'))
+    await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'processed/'))
   } catch (err) {
-    // E_NOTIMPL:  Once we are happy with this code, mark the file as "error".
-    // await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'error/'))
+    await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'error/'))
     log(`error with ${blobName}: ${err}`)
   }
 }

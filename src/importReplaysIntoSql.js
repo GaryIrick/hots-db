@@ -1,13 +1,24 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
+const uuid = require('uuid').v4
+const { padStart } = require('lodash')
+const insertRow = require('./db/insertRow')
 const getCompressedJson = require('./lib/getCompressedJson')
 const getSqlServer = require('./db/getSqlServer')
 const getRegion = require('./lib/getRegion')
+const getHeroId = require('./lib/getHeroId')
+const getTalentId = require('./lib/getTalentId')
 const moveBlob = require('./lib/moveBlob')
 
 const {
   azure: { storage: { account, sqlImportContainer } }
 } = require('./config')
+
+const getPatchSortable = (patch) => {
+  const parts = patch.split('.')
+
+  return parts[0] + padStart(parts[1], 4, '0') + padStart(parts[2], 4, '0') + padStart(parts[3], 7, '0')
+}
 
 const getPlayerId = async (db, toonHandle, name, tag) => {
   const region = getRegion(Number(toonHandle.substring(0, toonHandle.indexOf('-'))))
@@ -67,20 +78,102 @@ const importPlayers = async (db, json) => {
   return playerMap
 }
 
+const importGame = async (db, json, source, playerMap) => {
+  // If we've seen this game before, get rid of it.
+  await db
+    .request()
+    .input('fingerprint', json.fingerprint)
+    .query('DELETE FROM Game WHERE Fingerprint = @fingerprint')
+
+  const gameId = uuid()
+
+  await insertRow(db, 'Game', {
+    gameId,
+    fingerprint: json.fingerprint,
+    source,
+    patchSortable: getPatchSortable(json.patch),
+    region: json.region,
+    map: json.map,
+    date: json.date,
+    firstPickTeam: json.firstPickTeam,
+    winningTeam: json.winningTeam,
+    length: json.length
+  })
+
+  for (const teamIndex of [0, 1]) {
+    for (const ban of json.teams[teamIndex].bans) {
+      await insertRow(db, 'Ban', {
+        gameId,
+        team: teamIndex + 1,
+        round: ban.round,
+        banOrder: ban.order,
+        heroId: await getHeroId(db, ban.hero)
+      })
+    }
+  }
+
+  for (const takedown of json.takedowns) {
+    await insertRow(db, 'Takedown', {
+      takedownId: uuid(),
+      gameId,
+      victimId: await getHeroId(db, takedown.victim),
+      time: takedown.time,
+      killer1Id: await getHeroId(db, takedown.killers[0]),
+      killer2Id: await getHeroId(db, takedown.killers[1]),
+      killer3Id: await getHeroId(db, takedown.killers[2]),
+      killer4Id: await getHeroId(db, takedown.killers[3]),
+      killer5Id: await getHeroId(db, takedown.killers[4])
+    })
+  }
+
+  for (const teamIndex of [0, 1]) {
+    for (const player of json.teams[teamIndex].players) {
+      await insertRow(db, 'Boxscore', {
+        gameId,
+        playerId: playerMap[player.handle],
+        heroId: await getHeroId(db, player.hero),
+        team: teamIndex + 1,
+        party: player.party,
+        kills: player.stats.kills,
+        assists: player.stats.assists,
+        deaths: player.stats.deaths,
+        outnumberedDeaths: player.stats.outnumberedDeaths,
+        timeSpentDead: player.stats.timeSpentDead,
+        heroDamage: player.stats.heroDamage,
+        siegeDamage: player.stats.siegeDamage,
+        healing: player.stats.healing,
+        damageTaken: player.stats.damageTaken,
+        xp: player.stats.xp,
+        mercCaptures: player.stats.mercCaptures,
+        enemyCcTime: player.stats.enemyCcTime,
+        enemySilenceTime: player.stats.enemySilenceTime,
+        enemyRootTime: player.stats.enemyRootTime,
+        enemyStunTime: player.stats.enemyStunTime,
+        globes: player.stats.globes,
+        talent1Id: await getTalentId(db, player.hero, player.talents[0], 1),
+        talent2Id: await getTalentId(db, player.hero, player.talents[1], 2),
+        talent3Id: await getTalentId(db, player.hero, player.talents[2], 3),
+        talent4Id: await getTalentId(db, player.hero, player.talents[3], 4),
+        talent5Id: await getTalentId(db, player.hero, player.talents[4], 5),
+        talent6Id: await getTalentId(db, player.hero, player.talents[5], 6),
+        talent7Id: await getTalentId(db, player.hero, player.talents[6], 7)
+      })
+    }
+  }
+}
+
 const importReplay = async (sqlImportFilesystem, blobName, db, log) => {
   log(`importing ${blobName}`)
 
   try {
     const json = await getCompressedJson(sqlImportFilesystem, blobName)
     const playerMap = await importPlayers(db, json)
-    console.log(JSON.stringify(playerMap))
+    await importGame(db, json, 'hp', playerMap)
 
-    // E_NOTIMPL: Uncomment this after code is tested
-    // await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'processed/'))
-    log(`parseimported ${blobName}`)
+    await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'processed/'))
+    log(`imported ${blobName}`)
   } catch (err) {
-    // E_NOTIMPL: Uncomment this after code is tested
-    // await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'error/'))
+    await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'error/'))
     log(`error with ${blobName}: ${err}`)
   }
 }

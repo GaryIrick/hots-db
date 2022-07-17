@@ -30,7 +30,7 @@ module.exports = {
   },
   sqlServer: {
     hostname: 'localhost',
-    database: 'replays2',
+    database: 'replays',
     backupDirectory: 'D:\\MSSQL\\Backup'
   },
   aws: {

@@ -1,5 +1,6 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
+const { orderBy } = require('lodash')
 const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
 const putUncompressedJson = require('./lib/putUncompressedJson')
 const getSqlServer = require('./db/getSqlServer')
@@ -33,38 +34,39 @@ const getTier = (level) => {
 const syncHeroes = async (heroes) => {
   const db = await getSqlServer()
 
-  for (const name of Object.keys(heroes)) {
-    const { id: heroId, attribute_id: internalName, new_role: role, type } = heroes[name]
+  for (const name of orderBy(Object.keys(heroes), [k => heroes[k].release_date, k => heroes[k].name])) {
+    const { attribute_id: internalName, new_role: role, type, release_date: releaseDate } = heroes[name]
 
     const sql = `
       MERGE Hero AS tgt
       USING
       (
         SELECT 
-          @heroId,
           @name,
           @internalName,
           @role,
-          @type
-      ) AS src (HeroId, Name, InternalName, Role, Type)
+          @type,
+          @releaseDate
+      ) AS src (Name, InternalName, Role, Type, ReleaseDate)
         ON src.Name = tgt.Name
       WHEN NOT MATCHED THEN
-        INSERT (Name, InternalName, Role, Type)
-        VALUES (src.Name, src.InternalName, src.Role, src.Type)
+        INSERT (Name, InternalName, Role, Type, ReleaseDate)
+        VALUES (src.Name, src.InternalName, src.Role, src.Type, ReleaseDate)
       WHEN MATCHED THEN UPDATE SET
         tgt.Name = src.Name,
         tgt.InternalName = src.InternalName,
         tgt.Role = src.Role,
-        tgt.Type = src.Type
+        tgt.Type = src.Type,
+        tgt.ReleaseDate = src.ReleaseDate
     `
 
     await db
       .request()
-      .input('heroId', heroId)
       .input('name', name)
       .input('internalName', internalName)
       .input('role', role)
       .input('type', type)
+      .input('releaseDate', releaseDate)
       .query(sql)
   }
 
