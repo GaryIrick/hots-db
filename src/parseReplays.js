@@ -1,10 +1,10 @@
-const path = require('path')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { file: getTempFile } = require('tmp-promise')
 const fastq = require('fastq')
 const parser = require('hots-parser')
 const putCompressedJson = require('./lib/putCompressedJson')
+const changeExtension = require('./lib/changeExtension')
 const addAdditionalParseInfo = require('./lib/addAdditionalParseInfo')
 const moveBlob = require('./lib/moveBlob')
 
@@ -23,7 +23,7 @@ const parseReplay = async ({ rawFilesystem, parsedFilesystem, blobName, log }) =
 
     if (parse.status === 1) {
       addAdditionalParseInfo(tempPath, parse)
-      const parsedBlobName = blobName.replace(path.extname(blobName), '.json.gz')
+      const parsedBlobName = changeExtension(blobName, 'parse.json.gz')
       await putCompressedJson(parsedFilesystem, parsedBlobName, parse)
       await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'processed/'))
       log(`parsed ${blobName}`)

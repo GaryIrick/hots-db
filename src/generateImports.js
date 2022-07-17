@@ -4,6 +4,7 @@ const fastq = require('fastq')
 const { orderBy, findIndex } = require('lodash')
 const getCompressedJson = require('./lib/getCompressedJson')
 const putCompressedJson = require('./lib/putCompressedJson')
+const changeExtension = require('./lib/changeExtension')
 const getHeroByInternalName = require('./lib/getHeroByInternalName')
 const getRegion = require('./lib/getRegion')
 const moveBlob = require('./lib/moveBlob')
@@ -122,7 +123,7 @@ const getMessages = (parse, allPlayers) => {
   return messages
 }
 
-const getSqlImport = async (parse) => {
+const getImportJson = async (parse) => {
   const { match, match: { region: regionId, version, winner, firstPickWin } } = parse
   const game = {
     fingerprint: parse.fingerprint,
@@ -156,21 +157,16 @@ const getSqlImport = async (parse) => {
   return game
 }
 
-const getSparkImport = async (parse) => {
-  // E_NOTIMPL: Figure out what differences there are for SQL and Spark.
-  return getSqlImport(parse)
-}
-
 const generateImports = async ({ parsedFilesystem, sqlImportFilesystem, sparkImportFilesystem, blobName, log }) => {
   log(`starting ${blobName}`)
 
   try {
     // E_NOTIMPL: Can we use the same format for SQL and Spark?  Could simplify some things.
     const parse = await getCompressedJson(parsedFilesystem, blobName)
-    const sqlImport = await getSqlImport(parse)
-    await putCompressedJson(sqlImportFilesystem, blobName.replace('.json.gz', '-sql.json.gz'), sqlImport)
-    // const sparkImport = await getSparkImport(parse)
-    // await putCompressedJson(sparkImportFilesystem, blobName.replace('.json.gz', '-spark.json.gz'), sparkImport)
+    const jsonFilename = changeExtension(blobName, 'parse.json.gz')
+    const json = await getImportJson(parse)
+    await putCompressedJson(sqlImportFilesystem, jsonFilename, json)
+    await putCompressedJson(sparkImportFilesystem, jsonFilename, json)
     log(`generated imports for ${blobName}`)
     // E_NOTIMPL:  Once we are happy with this code, mark the file as "processed".
     // await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'processed/'))
