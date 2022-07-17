@@ -1,5 +1,3 @@
-# E_NOTIMPL: See if we can add the Microsoft.Azure.Cdn permission for certificates.
-
 resource "azurerm_key_vault" "key_vault" {
   name                = local.key_vault
   resource_group_name = local.resource_group

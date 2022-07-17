@@ -1,9 +1,7 @@
 provider "azuread" {
-  version = "~> 2.23.0"
 }
 
 provider "azurerm" {
-  version = "~> 3.13.0"
   features {
     key_vault {
       purge_soft_delete_on_destroy    = true
