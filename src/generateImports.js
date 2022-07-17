@@ -109,6 +109,24 @@ const getTakedowns = (parse, allPlayers) => {
   return takedowns
 }
 
+const getXpForTeam = (parse, team) => {
+  const allXp = []
+
+  for (const xp of parse.match.XPBreakdown.filter(x => x.team === team)) {
+    allXp.push({
+      time: loopsToGameSeconds(xp.loop),
+      minionXp: xp.breakdown.MinionXP,
+      creepXp: xp.breakdown.CreepXP,
+      structureXp: xp.breakdown.StructureXP,
+      heroXp: xp.breakdown.HeroXP,
+      trickleXp: xp.breakdown.TrickleXP,
+      theoreticalMinionXp: xp.theoreticalMinionXP
+    })
+  }
+
+  return allXp
+}
+
 const getMessages = (parse, allPlayers) => {
   const messages = []
 
@@ -139,13 +157,15 @@ const getImportJson = async (parse) => {
   const team1 = {
     team: 1,
     players: getPlayersForTeam(parse, 0),
-    bans: await getBansForTeam(parse, 0)
+    bans: await getBansForTeam(parse, 0),
+    xpOverTime: getXpForTeam(parse, 0)
   }
 
   const team2 = {
     team: 2,
     players: getPlayersForTeam(parse, 1),
-    bans: await getBansForTeam(parse, 1)
+    bans: await getBansForTeam(parse, 1),
+    xpOverTime: getXpForTeam(parse, 1)
   }
 
   game.teams = [team1, team2]
@@ -163,7 +183,7 @@ const generateImports = async ({ parsedFilesystem, sqlImportFilesystem, sparkImp
   try {
     // E_NOTIMPL: Can we use the same format for SQL and Spark?  Could simplify some things.
     const parse = await getCompressedJson(parsedFilesystem, blobName)
-    const jsonFilename = changeExtension(blobName, 'parse.json.gz')
+    const jsonFilename = changeExtension(blobName, 'import.json.gz')
     const json = await getImportJson(parse)
     await putCompressedJson(sqlImportFilesystem, jsonFilename, json)
     await putCompressedJson(sparkImportFilesystem, jsonFilename, json)
