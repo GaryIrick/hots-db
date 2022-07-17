@@ -1,6 +1,24 @@
 # This file is maintained automatically by "terraform init".
 # Manual edits may be lost in future updates.
 
+provider "registry.terraform.io/databricks/databricks" {
+  version     = "1.0.2"
+  constraints = "~> 1.0.2"
+  hashes = [
+    "h1:Wns3ce9nUmEuSmpZ3fu+F0FGgqNfoKz/5dhLFuQdcK8=",
+    "zh:16ff11cd23d833a04de68f5af7a91c376228e751d156f22afbfb4338c7b761e1",
+    "zh:22c6af34c651ac29c122bdf431cf34db893e667cb6f2dc75203bef7eca296c73",
+    "zh:59a8d72b8839db4c993ae99d37a8595f35ddfb7ddda35a2a0a0cc7a1cecffe29",
+    "zh:6df8b014924f24fe64108881015119d4c1ea4822bd64d28a3e98ac3c1f27540d",
+    "zh:78e60f612a38c4b7a2a7580083b9d50c7c449497e97fa61875079c90d7b73f6a",
+    "zh:96c07c1ef04e417c2c4ebf2a56acd3e9bfb65fc59b3620ac2cec78b5feca93ad",
+    "zh:991d2f6dc01e03ac43925329d5034ccc6825d2efdf22b6ce802fd4a374739afe",
+    "zh:a9de050500fe808b277ec9853372b48bc2b4faafa88f8b816720b86701cd150b",
+    "zh:bed8d9af7b214e772c1eb38324ce3d65ed7039a9e7ab96735f25792aa91e078c",
+    "zh:ef3b12026623d8543af55282a6de87e9d554edf5d7a357c4ab6e5282bf59720e",
+  ]
+}
+
 provider "registry.terraform.io/hashicorp/azuread" {
   version     = "2.26.1"
   constraints = "~> 2.26.1"
