@@ -1,3 +1,4 @@
+// E_NOTIMPL: Write SQL to pull in games from old database.
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const uuid = require('uuid').v4
@@ -160,15 +161,27 @@ const importGame = async (db, json, source, playerMap) => {
       })
     }
   }
+
+  for (let i = 0; i < json.messages.length; i++) {
+    const message = json.messages[i]
+    await insertRow(db, 'ChatMessage', {
+      gameId,
+      playerId: playerMap[message.player],
+      messageOrder: i + 1,
+      time: message.time,
+      message: message.text
+    })
+  }
 }
 
 const importReplay = async (sqlImportFilesystem, blobName, db, log) => {
   log(`importing ${blobName}`)
 
   try {
+    const source = blobName.split('/')[1]
     const json = await getCompressedJson(sqlImportFilesystem, blobName)
     const playerMap = await importPlayers(db, json)
-    await importGame(db, json, 'hp', playerMap)
+    await importGame(db, json, source, playerMap)
 
     await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'processed/'))
     log(`imported ${blobName}`)

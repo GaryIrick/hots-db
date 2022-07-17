@@ -1,7 +1,7 @@
 CREATE TABLE BoxScore
 (
-    GameId uniqueidentifier NOT NULL CONSTRAINT FK_PlayerGame_Game REFERENCES Game(GameId) ON DELETE CASCADE,
-    PlayerId uniqueidentifier NOT NULL CONSTRAINT FK_PlayerGame_Player REFERENCES Player(PlayerId),
+    GameId uniqueidentifier NOT NULL CONSTRAINT FK_BoxScore_Game REFERENCES Game(GameId) ON DELETE CASCADE,
+    PlayerId uniqueidentifier NOT NULL CONSTRAINT FK_BoxScore_Player REFERENCES Player(PlayerId),
     HeroId tinyint NOT NULL CONSTRAINT FK_BoxScore_Hero REFERENCES Hero(HeroId),
     Team tinyint NOT NULL,
     Party tinyint NULL,
