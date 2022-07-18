@@ -25,7 +25,8 @@ module.exports = {
       database: 'hots',
       readOnlyKey: 'cosmos-read-only-key',
       readWriteKey: 'cosmos-read-write-key',
-      matchesContainer: 'ngs-matches'
+      matchesContainer: 'ngs-matches',
+      teamsContainer: 'ngs-teams'
     }
   },
   sqlServer: {

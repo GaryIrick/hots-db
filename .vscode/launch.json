@@ -16,6 +16,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch find NGS teams",
+            "program": "${workspaceFolder}/commands/findNgsTeams.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch copy NGS matches",
             "program": "${workspaceFolder}/commands/copyNgsMatches.js",
             "skipFiles": [
