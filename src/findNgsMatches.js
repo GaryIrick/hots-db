@@ -160,7 +160,9 @@ const normalizeMatch = (match, ourSide) => {
       normalizedMatch.games.push({
         map: findMapFromReplayKey(replayKey),
         replayKey,
-        isWin: match.other[`${gameIndex}`].winner === ourSide
+        // Some matches are missing the winner information in the "other" block, so we put "undefined" instead of "true/false" there.
+        // It's up to whoever looks at the data to know about this wrinkle, since those are both falsy.
+        isWin: match.other[`${gameIndex}`] ? (match.other[`${gameIndex}`].winner === ourSide) : undefined
       })
     }
   }
