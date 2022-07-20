@@ -128,12 +128,14 @@ const importGame = async (db, json, source, playerMap) => {
   }
 
   for (const teamIndex of [0, 1]) {
-    for (const player of json.teams[teamIndex].players) {
+    for (let playerIndex = 0; playerIndex < json.teams[teamIndex].players.length; playerIndex++) {
+      const player = json.teams[teamIndex].players[playerIndex]
       await insertRow(db, 'Boxscore', {
         gameId,
         playerId: playerMap[player.handle],
         heroId: await getHeroId(db, player.hero),
         team: teamIndex + 1,
+        pickOrder: playerIndex + 1,
         party: player.party,
         kills: player.stats.kills,
         assists: player.stats.assists,

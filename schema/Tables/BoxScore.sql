@@ -4,6 +4,7 @@ CREATE TABLE BoxScore
     PlayerId uniqueidentifier NOT NULL CONSTRAINT FK_BoxScore_Player REFERENCES Player(PlayerId),
     HeroId tinyint NOT NULL CONSTRAINT FK_BoxScore_Hero REFERENCES Hero(HeroId),
     Team tinyint NOT NULL,
+    PickOrder tinyint NOT NULL,
     Party tinyint NULL,
     Kills tinyint NOT NULL,
     Assists tinyint NOT NULL,
