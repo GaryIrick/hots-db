@@ -1,4 +1,8 @@
 // E_NOTIMPL: Write SQL to pull in games from old database.
+// E_NOTIMPL: Write code to purge old directories when they are empty.
+// E_NOTIMPL: Write code to move directories back from "pending" to "processed".  Probably
+//            need to be smart, if the old directory doesn't exist it's one move, if the
+//            old directory does exist, have to move 1-file-at-1-time.
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const uuid = require('uuid').v4
