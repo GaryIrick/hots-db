@@ -26,7 +26,6 @@ provider "databricks" {
 
 data "azurerm_client_config" "current" {}
 
-// E_NOTIMPL: Are these the same thing, since I am running the terraform?
 data "azuread_client_config" "current" {}
 
 data "azuread_user" "me" {
