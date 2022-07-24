@@ -18,7 +18,7 @@ data "databricks_node_type" "all_purpose_node" {
 }
 
 resource "azuread_application" "db_app" {
-  display_name = "Databricks for HOTS-DB"
+  display_name = "Databricks HOTS-DB"
   owners       = [data.azuread_client_config.current.object_id]
 }
 
@@ -29,6 +29,7 @@ resource "azuread_service_principal" "db_service_principal" {
 resource "azuread_service_principal_password" "db_service_principal_password" {
   service_principal_id = azuread_service_principal.db_service_principal.id
   display_name         = "Databricks service principal password"
+  end_date_relative    = "17520h" # 2 years
 }
 
 resource "azurerm_resource_group" "db_resource_group" {
@@ -46,6 +47,8 @@ resource "databricks_secret" "service_principal_key" {
   key          = "service_principal_key"
   string_value = azuread_service_principal_password.db_service_principal_password.value
 }
+
+// Making changes to anyhing related to the cluster or workspace may cause the cluster to start up!
 
 resource "databricks_cluster" "all_purpose_cluster" {
   cluster_name            = "All Purpose"
