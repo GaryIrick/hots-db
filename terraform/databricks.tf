@@ -99,6 +99,12 @@ resource "azurerm_role_assignment" "db_storage_contributor_access" {
   principal_id         = azuread_service_principal.db_service_principal.object_id
 }
 
+# It's not worth the effort to set up Git integration here, we'll just do it in the UI.
+
 output "node_type" {
   value = data.databricks_node_type.all_purpose_node.id
+}
+
+output "spark_version" {
+  value = data.databricks_spark_version.latest.id
 }

@@ -8,8 +8,9 @@ locals {
   key_vault                         = "hots-db-keys"
   storage_account_name              = "hots-db-storage"
   github_account                    = "GaryIrick"
+  github_username                   = "garyirick@gmail.com"
   data_factory_repo                 = "hots-db-azure-data-factory"
-  databricks_rep                    = "hots-db-databricks"
+  databricks_repo                   = "hots-db-databricks"
   my_ip                             = "97.85.189.66"
 }
 

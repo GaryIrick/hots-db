@@ -7,6 +7,8 @@ resource "azurerm_data_factory" "factory" {
     type = "SystemAssigned"
   }
 
+  # We will complete the Git integration in the Data Factory UI, can't do it here.
+
   github_configuration {
     git_url         = "https://github.com"
     account_name    = local.github_account
