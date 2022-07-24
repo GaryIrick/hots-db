@@ -51,6 +51,12 @@ resource "azurerm_storage_container" "spark_import" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_container" "stats" {
+  name                  = "stats"
+  storage_account_name  = azurerm_storage_account.hots_db_data.name
+  container_access_type = "private"
+}
+
 resource "azurerm_storage_account" "functions" {
   name                     = "hotsdbfunctions"
   location                 = local.location

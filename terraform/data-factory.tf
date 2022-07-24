@@ -6,6 +6,14 @@ resource "azurerm_data_factory" "factory" {
   identity {
     type = "SystemAssigned"
   }
+
+  github_configuration {
+    git_url         = "https://github.com"
+    account_name    = local.github_account
+    repository_name = local.data_factory_repo
+    branch_name     = "main"
+    root_folder     = "/"
+  }
 }
 
 resource "azurerm_data_factory_linked_service_key_vault" "factory_key_value_link" {
