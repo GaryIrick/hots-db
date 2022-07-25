@@ -76,6 +76,8 @@ const copyReplayToAzure = async ({ rawFilesystem, s3, game, log }) => {
     if (err.statusCode === 403 || err.statusCode === 404) {
       log(`skipped ${blobPath}`)
       return
+    } else {
+      throw err
     }
   }
 

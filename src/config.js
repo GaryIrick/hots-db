@@ -5,6 +5,8 @@ module.exports = {
     location: 'centralus',
     keyVault: 'hots-db-keys',
     resourceGroup: 'hots-db-resource-group',
+    functionAppName: 'hots-db-functions',
+    functionAppUrl: 'https://api.hots-helper.com/api',
     cdn: {
       domainNamesResourceGroup: 'domain-names',
       domain: 'hots-helper.com',
