@@ -51,7 +51,7 @@ const log = (msg) => {
 const run = async () => {
   const hostKey = await getHostKey()
   log('Finding NGS matches')
-  await callAzureFunction('Finding NGS matches', hostKey, { season: currentSeason })
+  await callAzureFunction('find-ngs-matches', hostKey, { season: currentSeason })
   await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 100 }), log)
   await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
   await callUntilZero('Parsing replays', () => callAzureFunction('parse-replays', hostKey, { maxCount: 1000 }), log)
