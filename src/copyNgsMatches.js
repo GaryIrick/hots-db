@@ -1,7 +1,9 @@
+// E_NOTIMPL: Convert to use FileSystemClient, and *maybe* fastq, but probably not.
 const { SecretClient } = require('@azure/keyvault-secrets')
 const { BlobServiceClient } = require('@azure/storage-blob')
 const { DefaultAzureCredential } = require('@azure/identity')
 const AWS = require('aws-sdk')
+const streamToBuffer = require('./lib/streamToBuffer')
 const getCosmos = require('./db/getCosmos')
 const {
   ngs: { bucket },
@@ -47,23 +49,28 @@ const doesFileExistInAzure = async (blobClient) => {
 }
 
 const copyFileFromS3ToAzure = async (bucket, key, blobClient, log) => {
+  let replay
+
   try {
     const s3 = await getS3()
-    const getStream = s3.getObject({
+    const awsGetStream = s3.getObject({
       Bucket: bucket,
       Key: key,
       RequestPayer: 'requester'
-    }).createReadStream()
+    })
+      .createReadStream()
 
-    await blobClient.uploadStream(getStream)
-  } catch (e) {
+    replay = await streamToBuffer(awsGetStream)
+  } catch (err) {
     // If this file is missing, we just move own with our lives.
-    if (e.statusCode === 403 || e.statusCode === 404) {
+    if (err.statusCode === 403 || err.statusCode === 404) {
       log(`Skipping ${key}, it appears to be unavailable.`)
+      return
     } else {
-      throw e
+      throw err
     }
   }
+  await blobClient.upload(replay, replay.length)
 }
 
 const copyReplay = async (season, key, log) => {
