@@ -1,28 +1,28 @@
+const os = require('os')
+const path = require('path')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { file: getTempFile } = require('tmp-promise')
-const fastq = require('fastq')
-const parser = require('hots-parser')
+const createWorkQueue = require('./lib/createWorkQueue')
+const createThreadPool = require('./lib/createThreadPool')
 const putCompressedJson = require('./lib/putCompressedJson')
 const changeExtension = require('./lib/changeExtension')
-const addAdditionalParseInfo = require('./lib/addAdditionalParseInfo')
 const moveBlob = require('./lib/moveBlob')
 
 const {
   azure: { storage: { account, rawContainer, parsedContainer } }
 } = require('./config')
 
-const parseReplay = async ({ rawFilesystem, parsedFilesystem, blobName, log }) => {
+const parseReplay = async ({ threadPool, rawFilesystem, parsedFilesystem, blobName, log }) => {
   log(`starting ${blobName}`)
 
   try {
     const rawFileClient = rawFilesystem.getFileClient(blobName)
     const { path: tempPath, cleanup } = await getTempFile()
     await rawFileClient.readToFile(tempPath)
-    const parse = parser.processReplay(tempPath, { getBMData: false, overrideVerifiedBuild: true })
+    const parse = await threadPool.runTask(tempPath, { replayFile: tempPath })
 
     if (parse.status === 1) {
-      addAdditionalParseInfo(tempPath, parse)
       const parsedBlobName = changeExtension(blobName, 'parse.json.gz')
       await putCompressedJson(parsedFilesystem, parsedBlobName, parse)
       await moveBlob(rawFilesystem, blobName, blobName.replace('pending/', 'processed/'))
@@ -42,10 +42,10 @@ module.exports = async (maxCount, log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
   const parsedFilesystem = datalake.getFileSystemClient(parsedContainer)
-  const queue = fastq.promise(parseReplay, 20)
+  const threadPool = createThreadPool(os.cpus().length, path.join(__filename, '/../lib/parseWorker.js'))
+  const queue = createWorkQueue(100, parseReplay)
 
   let keepGoing = true
-  let queuedWork = false
   let count = 0
 
   for await (const page of rawFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 100 })) {
@@ -59,8 +59,7 @@ module.exports = async (maxCount, log) => {
       }
 
       if (!item.isDirectory) {
-        queue.push({ rawFilesystem, parsedFilesystem, blobName: item.name, log })
-        queuedWork = true
+        queue.enqueue({ threadPool, rawFilesystem, parsedFilesystem, blobName: item.name, log })
 
         if (++count >= maxCount) {
           keepGoing = false
@@ -69,11 +68,8 @@ module.exports = async (maxCount, log) => {
     }
   }
 
-  if (queuedWork) {
-    // If we do this when we haven't put anything into the queue, the process stops immediately.
-    // I have no idea why.
-    await queue.drained()
-  }
+  await queue.drain()
+  threadPool.shutdown()
 
   return count
 }

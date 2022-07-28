@@ -1,4 +1,6 @@
-// E_NOTIMPL: Write SQL to pull in games from old database.
+// E_NOTIMPL: Do this in a transaction.
+// E_NOTIMPL: Make sure there is an index for every FK relationship.
+// E_NOTIMPL: Add additional indexes, but only after we have a lot of data so we can validate them.
 // E_NOTIMPL: Write code to purge old directories when they are empty.
 // E_NOTIMPL: Write code to move directories back from "pending" to "processed".  Probably
 //            need to be smart, if the old directory doesn't exist it's one move, if the
@@ -25,15 +27,20 @@ const getPatchSortable = (patch) => {
   return parts[0] + padStart(parts[1], 4, '0') + padStart(parts[2], 4, '0') + padStart(parts[3], 7, '0')
 }
 
-const getPlayerId = async (db, toonHandle, name, tag) => {
-  const region = getRegion(Number(toonHandle.substring(0, toonHandle.indexOf('-'))))
+const playerCache = {}
 
-  const result = await db.request()
-    .input('toonHandle', toonHandle)
-    .input('region', region)
-    .input('name', name)
-    .input('tag', tag)
-    .query(`
+const getPlayerId = async (db, toonHandle, name, tag) => {
+  const cacheKey = `${toonHandle}-${name}-${tag}`
+
+  if (!playerCache[cacheKey]) {
+    const region = getRegion(Number(toonHandle.substring(0, toonHandle.indexOf('-'))))
+
+    const result = await db.request()
+      .input('toonHandle', toonHandle)
+      .input('region', region)
+      .input('name', name)
+      .input('tag', tag)
+      .query(`
       MERGE Player AS tgt
       USING
       (
@@ -49,13 +56,13 @@ const getPlayerId = async (db, toonHandle, name, tag) => {
         inserted.PlayerId
     `)
 
-  const playerId = result.recordset[0].PlayerId
+    const playerId = result.recordset[0].PlayerId
 
-  await db.request()
-    .input('playerId', playerId)
-    .input('name', name)
-    .input('tag', tag)
-    .query(`
+    await db.request()
+      .input('playerId', playerId)
+      .input('name', name)
+      .input('tag', tag)
+      .query(`
         MERGE BattleTag as tgt
         USING 
         (
@@ -69,7 +76,10 @@ const getPlayerId = async (db, toonHandle, name, tag) => {
             VALUES(src.PlayerId, src.Name, src.Tag, GETUTCDATE());
     `)
 
-  return playerId
+    playerCache[cacheKey] = playerId
+  }
+
+  return playerCache[cacheKey]
 }
 
 const importPlayers = async (db, json) => {

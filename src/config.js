@@ -50,6 +50,6 @@ module.exports = {
   ngs: {
     apiUrl: 'https://www.nexusgamingseries.org/api',
     bucket: 'ngs-replay-storage',
-    currentSeason: 13
+    currentSeason: 14
   }
 }

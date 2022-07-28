@@ -1,11 +1,10 @@
 module "db_workspace" {
   source = "./modules/databricks-workspace"
 
-  name                        = "hots-db-workspace"
-  location                    = local.location
-  resource_group              = local.resource_group
-  storage_account_name        = local.databricks_storage_account_name
-  managed_resource_group_name = local.databricks_managed_resource_group
+  name                 = "hots-db-workspace"
+  location             = local.location
+  resource_group       = local.resource_group
+  storage_account_name = local.databricks_storage_account_name
 }
 
 data "databricks_spark_version" "latest" {
@@ -30,11 +29,6 @@ resource "azuread_service_principal_password" "db_service_principal_password" {
   service_principal_id = azuread_service_principal.db_service_principal.id
   display_name         = "Databricks service principal password"
   end_date_relative    = "17520h" # 2 years
-}
-
-resource "azurerm_resource_group" "db_resource_group" {
-  name     = local.databricks_managed_resource_group
-  location = local.location
 }
 
 resource "databricks_secret_scope" "storage_secrets" {

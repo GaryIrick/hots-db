@@ -2,6 +2,7 @@ const agent = require('superagent')
 const moment = require('moment')
 const { DefaultAzureCredential } = require('@azure/identity')
 const importReplaysIntoSql = require('../src/importReplaysIntoSql')
+const parseReplays = require('../src/parseReplays')
 const { azure: { resourceGroup, functionAppUrl, functionAppName }, ngs: { currentSeason } } = require('../src/config')
 
 const getHostKey = async () => {
@@ -34,12 +35,16 @@ const callUntilZero = async (name, fn, log) => {
   let total = 0
 
   while (keepGoing) {
-    const count = await fn()
-    total += count
-    log(`${name} (${total})`)
+    try {
+      const count = await fn()
+      total += count
+      log(`${name} (${total})`)
 
-    if (count === 0) {
-      keepGoing = false
+      if (count === 0) {
+        keepGoing = false
+      }
+    } catch (e) {
+      log(`ERROR: ${e}`)
     }
   }
 }
@@ -51,12 +56,18 @@ const log = (msg) => {
 const run = async () => {
   const hostKey = await getHostKey()
   log('Finding NGS matches')
-  await callAzureFunction('find-ngs-matches', hostKey, { season: currentSeason })
-  await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 100 }), log)
-  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
-  await callUntilZero('Parsing replays', () => callAzureFunction('parse-replays', hostKey, { maxCount: 1000 }), log)
-  await callUntilZero('Generating imports', () => callAzureFunction('generate-imports', hostKey, { maxCount: 1000 }), log)
-  await callUntilZero('Importing into SQL', () => importReplaysIntoSql(100, () => {}), log)
+  // await callAzureFunction('find-ngs-matches', hostKey, { season: currentSeason })
+  // await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 1000 }), log)
+  // await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 1000 }), log)
+
+  await callUntilZero('Generating imports', () => callAzureFunction('generate-imports', hostKey, { maxCount: 500 }), log)
+  await callUntilZero('Importing into SQL', () => importReplaysIntoSql(1000, () => {}), log)
+
+  await callUntilZero('Parsing replays', () => parseReplays(1000, () => {}), log)
+  // await callUntilZero('Parsing replays', () => callAzureFunction('parse-replays', hostKey, { maxCount: 100 }), log)
+
+  await callUntilZero('Generating imports', () => callAzureFunction('generate-imports', hostKey, { maxCount: 500 }), log)
+  await callUntilZero('Importing into SQL', () => importReplaysIntoSql(1000, () => {}), log)
 }
 
 run().then(() => log('Done.'))

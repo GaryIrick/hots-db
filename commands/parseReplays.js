@@ -10,4 +10,8 @@ if (process.argv.length !== 3) {
   process.exit(1)
 }
 
-run(Number(process.argv[2]))
+const start = new Date()
+run(Number(process.argv[2])).then(() => {
+  const end = new Date()
+  console.log(`Elapsed time: ${end - start}`)
+})
