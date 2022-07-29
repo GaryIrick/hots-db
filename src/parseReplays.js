@@ -1,3 +1,6 @@
+// Shut up the warning about Javascript extraction when the parser gets loaded.
+process.env.LOGLEVEL = 'error'
+
 const os = require('os')
 const path = require('path')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
@@ -43,7 +46,7 @@ module.exports = async (maxCount, log) => {
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
   const parsedFilesystem = datalake.getFileSystemClient(parsedContainer)
   const threadPool = createThreadPool(os.cpus().length, path.join(__filename, '/../lib/parseWorker.js'))
-  const queue = createWorkQueue(100, parseReplay)
+  const queue = createWorkQueue(50, parseReplay)
 
   let keepGoing = true
   let count = 0

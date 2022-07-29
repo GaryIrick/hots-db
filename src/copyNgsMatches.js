@@ -1,4 +1,4 @@
-// E_NOTIMPL: Convert to use FileSystemClient, and *maybe* fastq, but probably not.
+// E_NOTIMPL: Convert to use FileSystemClient, maybe.
 const { SecretClient } = require('@azure/keyvault-secrets')
 const { BlobServiceClient } = require('@azure/storage-blob')
 const { DefaultAzureCredential } = require('@azure/identity')

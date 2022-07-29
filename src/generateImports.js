@@ -1,7 +1,7 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
-const fastq = require('fastq')
 const { orderBy, findIndex } = require('lodash')
+const createWorkQueue = require('./lib/createWorkQueue')
 const fixHeroName = require('./lib/fixHeroName')
 const getCompressedJson = require('./lib/getCompressedJson')
 const putCompressedJson = require('./lib/putCompressedJson')
@@ -200,10 +200,9 @@ module.exports = async (maxCount, log) => {
   const parsedFilesystem = datalake.getFileSystemClient(parsedContainer)
   const sqlImportFilesystem = datalake.getFileSystemClient(sqlImportContainer)
   const sparkImportFilesystem = datalake.getFileSystemClient(sparkImportContainer)
-  const queue = fastq.promise(generateImports, 20)
+  const queue = createWorkQueue(50, generateImports)
 
   let keepGoing = true
-  let queuedWork = false
   let count = 0
 
   for await (const page of parsedFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 100 })) {
@@ -217,8 +216,7 @@ module.exports = async (maxCount, log) => {
       }
 
       if (!item.isDirectory) {
-        queue.push({ parsedFilesystem, sqlImportFilesystem, sparkImportFilesystem, blobName: item.name, log })
-        queuedWork = true
+        queue.enqueue({ parsedFilesystem, sqlImportFilesystem, sparkImportFilesystem, blobName: item.name, log })
 
         if (++count >= maxCount) {
           keepGoing = false
@@ -227,11 +225,7 @@ module.exports = async (maxCount, log) => {
     }
   }
 
-  if (queuedWork) {
-    // If we do this when we haven't put anything into the queue, the process stops immediately.
-    // I have no idea why.
-    await queue.drained()
-  }
+  await queue.drain()
 
   return count
 }

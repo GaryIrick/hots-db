@@ -2,7 +2,7 @@ const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { SecretClient } = require('@azure/keyvault-secrets')
 const AWS = require('aws-sdk')
-const fastq = require('fastq')
+const createWorkQueue = require('./lib/createWorkQueue')
 const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
 const streamToBuffer = require('./lib/streamToBuffer')
 const {
@@ -92,10 +92,9 @@ module.exports = async (maxCount, log) => {
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
   const s3 = await getS3()
   let mostRecent = await getMostRecent(configFilesystem)
-  const queue = fastq.promise(copyReplayToAzure, 20)
+  const queue = createWorkQueue(50, copyReplayToAzure)
 
   let keepGoing = true
-  let queuedWork = false
   let count = 0
 
   while (keepGoing) {
@@ -115,8 +114,7 @@ module.exports = async (maxCount, log) => {
             throw new Error(`Replay ${game.replayID} has game_type of ${game.game_type}.`)
           }
 
-          queue.push({ rawFilesystem, s3, game, log })
-          queuedWork = true
+          queue.enqueue({ rawFilesystem, s3, game, log })
         }
 
         if (++count >= maxCount) {
@@ -129,11 +127,7 @@ module.exports = async (maxCount, log) => {
     }
   }
 
-  if (queuedWork) {
-    // If we do this when we haven't put anything into the queue, the process stops immediately.
-    // I have no idea why.
-    await queue.drained()
-  }
+  await queue.drain()
 
   await saveMostRecent(configFilesystem, mostRecent)
 
