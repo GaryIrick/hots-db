@@ -58,7 +58,6 @@ const run = async () => {
   await callAzureFunction('find-ngs-matches', hostKey, { season: currentSeason })
   await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 1000 }), log)
   await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 1000 }), log)
-
   await callUntilZero('Parsing replays', () => callAzureFunction('parse-replays', hostKey, { maxCount: 100 }), log)
   await callUntilZero('Generating imports', () => callAzureFunction('generate-imports', hostKey, { maxCount: 500 }), log)
   await callUntilZero('Importing into SQL', () => importReplaysIntoSql(1000, () => {}), log)

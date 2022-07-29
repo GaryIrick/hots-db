@@ -129,9 +129,6 @@ const getMatchDate = (match) => {
 const normalizeMatch = (match, ourSide) => {
   const theirSide = ourSide === 'home' ? 'away' : 'home'
 
-  if (!match.other) {
-    console.log('foo')
-  }
   const normalizedMatch = {
     id: match.matchId,
     side: ourSide,

@@ -3,6 +3,7 @@ const { SecretClient } = require('@azure/keyvault-secrets')
 const { BlobServiceClient } = require('@azure/storage-blob')
 const { DefaultAzureCredential } = require('@azure/identity')
 const AWS = require('aws-sdk')
+const createWorkQueue = require('./lib/createWorkQueue')
 const streamToBuffer = require('./lib/streamToBuffer')
 const getCosmos = require('./db/getCosmos')
 const {
@@ -82,8 +83,22 @@ const copyReplay = async (season, key, log) => {
   }
 }
 
+const copyMatch = async ({ container, match, log }) => {
+  for (const game of match.games) {
+    await copyReplay(match.season, game, log)
+  }
+
+  await container.item(match.id, match.id).patch([
+    { op: 'set', path: '/isCopied', value: true },
+    { op: 'set', path: '/isParsed', value: false }
+  ])
+
+  log(`Copied match ${match.id}.`)
+}
+
 module.exports = async (maxCount, log) => {
   const container = await getCosmos(matchesContainer, true)
+  const queue = createWorkQueue(25, copyMatch)
   let count = 0
   let keepGoing = true
 
@@ -97,22 +112,22 @@ module.exports = async (maxCount, log) => {
         break
       }
 
-      for (const game of match.games) {
-        await copyReplay(match.season, game, log)
+      if (count === 0) {
+        // Wait on the very first one.  This makes sure our credentials are good before we
+        // starting running several of them.  If we don't do this, we can get 429 as
+        // multiple tasks race to get the credential before it's cached.
+        await copyMatch({ container, match, log })
+      } else {
+        queue.enqueue({ container, match, log })
       }
-
-      await container.item(match.id, match.id).patch([
-        { op: 'set', path: '/isCopied', value: true },
-        { op: 'set', path: '/isParsed', value: false }
-      ])
-
-      log(`Copied match ${match.id}.`)
 
       count++
     }
 
     keepGoing = count < maxCount && response.hasMoreResults
   }
+
+  await queue.drain()
 
   log(`Copied ${count} matches.`)
 

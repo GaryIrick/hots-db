@@ -1,3 +1,5 @@
+// E_NOTIMPL: Write code to prune empty directories, it *really* slows down things waiting on them.
+
 // Shut up the warning about Javascript extraction when the parser gets loaded.
 process.env.LOGLEVEL = 'error'
 
