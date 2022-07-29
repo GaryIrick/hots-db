@@ -216,7 +216,14 @@ module.exports = async (maxCount, log) => {
       }
 
       if (!item.isDirectory) {
-        queue.enqueue({ parsedFilesystem, sqlImportFilesystem, sparkImportFilesystem, blobName: item.name, log })
+        // Wait on the very first one.  This makes sure our credentials are good before we
+        // starting running several of them.  If we don't do this, we can get 429 as
+        // multiple tasks race to get the credential before it's cached.
+        if (count === 0) {
+          await generateImports({ parsedFilesystem, sqlImportFilesystem, sparkImportFilesystem, blobName: item.name, log })
+        } else {
+          queue.enqueue({ parsedFilesystem, sqlImportFilesystem, sparkImportFilesystem, blobName: item.name, log })
+        }
 
         if (++count >= maxCount) {
           keepGoing = false

@@ -2,7 +2,6 @@ const agent = require('superagent')
 const moment = require('moment')
 const { DefaultAzureCredential } = require('@azure/identity')
 const importReplaysIntoSql = require('../src/importReplaysIntoSql')
-const parseReplays = require('../src/parseReplays')
 const { azure: { resourceGroup, functionAppUrl, functionAppName }, ngs: { currentSeason } } = require('../src/config')
 
 const getHostKey = async () => {
