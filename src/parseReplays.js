@@ -1,5 +1,3 @@
-// E_NOTIMPL: Write code to prune empty directories, it *really* slows down things waiting on them.
-
 // Shut up the warning about Javascript extraction when the parser gets loaded.
 process.env.LOGLEVEL = 'error'
 
@@ -53,7 +51,7 @@ module.exports = async (maxCount, log) => {
   let keepGoing = true
   let count = 0
 
-  for await (const page of rawFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 100 })) {
+  for await (const page of rawFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 1000 })) {
     if (!keepGoing) {
       break
     }

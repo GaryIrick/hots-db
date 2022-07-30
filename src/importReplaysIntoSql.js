@@ -1,7 +1,5 @@
-// E_NOTIMPL: Do this in a transaction.
 // E_NOTIMPL: Make sure there is an index for every FK relationship.
 // E_NOTIMPL: Add additional indexes, but only after we have a lot of data so we can validate them.
-// E_NOTIMPL: Write code to purge old directories when they are empty.
 // E_NOTIMPL: Write code to move directories back from "pending" to "processed".  Probably
 //            need to be smart, if the old directory doesn't exist it's one move, if the
 //            old directory does exist, have to move 1-file-at-1-time.
@@ -192,16 +190,22 @@ const importGame = async (db, json, source, playerMap) => {
 
 const importReplay = async (sqlImportFilesystem, blobName, db, log) => {
   log(`importing ${blobName}`)
+  const txn = db.transaction()
 
   try {
+    await txn.begin()
     const source = blobName.split('/')[1]
     const json = await getCompressedJson(sqlImportFilesystem, blobName)
-    const playerMap = await importPlayers(db, json)
-    await importGame(db, json, source, playerMap)
+    const playerMap = await importPlayers(txn, json)
+    await importGame(txn, json, source, playerMap)
 
+    await txn.commit()
     await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'processed/'))
     log(`imported ${blobName}`)
   } catch (err) {
+    try {
+      await txn.rollback()
+    } catch (ignored) {}
     await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'error/'))
     log(`error with ${blobName}: ${err}`)
   }
@@ -215,7 +219,7 @@ module.exports = async (maxCount, log) => {
   let keepGoing = true
   let count = 0
 
-  for await (const page of sqlImportFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 100 })) {
+  for await (const page of sqlImportFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 1000 })) {
     if (!keepGoing) {
       break
     }

@@ -108,6 +108,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch prune directories",
+            "program": "${workspaceFolder}/commands/pruneDirectories.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch sync hero data",
             "program": "${workspaceFolder}/commands/syncHeroData.js",
             "skipFiles": [

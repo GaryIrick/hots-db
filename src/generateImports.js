@@ -205,7 +205,7 @@ module.exports = async (maxCount, log) => {
   let keepGoing = true
   let count = 0
 
-  for await (const page of parsedFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 100 })) {
+  for await (const page of parsedFilesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 1000 })) {
     if (!keepGoing) {
       break
     }
