@@ -71,6 +71,9 @@
     <Build Include="Tables\Player.sql" />
     <Build Include="Tables\BattleTag.sql" />
     <Build Include="Tables\ChatMessage.sql" />
+    <Build Include="Tables\Match.sql" />
+    <Build Include="Tables\MapBan.sql" />
+    <Build Include="Tables\MatchGame.sql" />
   </ItemGroup>
   <ItemGroup>
     <RefactorLog Include="Replays.refactorlog" />

@@ -60,6 +60,7 @@ const importMatches = async (matchesData, container, log) => {
         season: match.season,
         type: match.type,
         round: match.round,
+        isPlayoffs: match.type === 'tournament',
         division: match.divisionConcat || 'unknown',
         games: [],
         homeTeam: {
@@ -76,7 +77,9 @@ const importMatches = async (matchesData, container, log) => {
           score: match.away.score,
           domination: !!match.away.dominator
         },
-        status: { }
+        caster: match.casterName,
+        vodLinks: match.vodLinks,
+        status: {}
       }
 
       for (let i = 1; i <= 7; i++) {

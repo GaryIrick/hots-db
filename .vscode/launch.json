@@ -98,6 +98,18 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch attach NGS matches",
+            "program": "${workspaceFolder}/commands/attachNgsMatches.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Catch up",
             "program": "${workspaceFolder}/commands/catchUp.js",
             "skipFiles": [
