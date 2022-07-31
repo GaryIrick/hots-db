@@ -85,12 +85,11 @@ const copyReplay = async (season, key, log) => {
 
 const copyMatch = async ({ container, match, log }) => {
   for (const game of match.games) {
-    await copyReplay(match.season, game, log)
+    await copyReplay(match.season, game.replayKey, log)
   }
 
   await container.item(match.id, match.id).patch([
-    { op: 'set', path: '/isCopied', value: true },
-    { op: 'set', path: '/isParsed', value: false }
+    { op: 'set', path: '/status/isCopied', value: true }
   ])
 
   log(`Copied match ${match.id}.`)
@@ -102,7 +101,7 @@ module.exports = async (maxCount, log) => {
   let count = 0
   let keepGoing = true
 
-  const query = container.items.query('SELECT m.id, m.season, m.games FROM m WHERE m.isCopied = false')
+  const query = container.items.query('SELECT m.id, m.season, m.games FROM m WHERE (m.status.isCopied = false OR NOT ISDEFINED(m.status.isCopied))')
 
   while (keepGoing) {
     const response = await query.fetchNext()

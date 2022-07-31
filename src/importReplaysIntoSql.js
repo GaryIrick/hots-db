@@ -92,11 +92,12 @@ const importPlayers = async (db, json) => {
 }
 
 const importGame = async (db, json, source, playerMap) => {
+  // E_NOTIMPL: Either put this back or nuke it.
   // If we've seen this game before, get rid of it.
-  await db
-    .request()
-    .input('fingerprint', json.fingerprint)
-    .query('DELETE FROM Game WHERE Fingerprint = @fingerprint')
+  // await db
+  //   .request()
+  //   .input('fingerprint', json.fingerprint)
+  //   .query('DELETE FROM Game WHERE Fingerprint = @fingerprint')
 
   const gameId = uuid()
 

@@ -76,7 +76,7 @@ const importMatches = async (matchesData, container, log) => {
           score: match.away.score,
           domination: !!match.away.dominator
         },
-        isCopied: false
+        status: { }
       }
 
       for (let i = 1; i <= 7; i++) {
@@ -84,7 +84,10 @@ const importMatches = async (matchesData, container, log) => {
 
         // There was one replay that had .tempUrl, but not url, just skip it.  Data is broken, per Wraithling.
         if (replay && replay.url) {
-          doc.games.push(replay.url)
+          doc.games.push({
+            replayKey: replay.url,
+            winner: match.other[`${i}`] ? (match.other[`${i}`].winner) : undefined
+          })
         }
       }
 
@@ -213,7 +216,6 @@ module.exports = async (season, log) => {
   const containerForTeams = await getCosmos(teamsContainer, true)
 
   await updateTeams(returnObject, season, containerForTeams, log)
-  // E_NOTIMPL: Do we really need to save the matches separately from the teams anymore?
   const matchCount = await importMatches(returnObject, containerForMatches, log)
 
   return matchCount
