@@ -8,3 +8,6 @@ CREATE TABLE BattleTag
     CONSTRAINT FK_BattleTag_Player FOREIGN KEY (PlayerId) REFERENCES Player(PlayerId) ON DELETE CASCADE
 );
 GO
+
+CREATE INDEX IX_BattleTag_Player ON BattleTag(PlayerId);
+GO

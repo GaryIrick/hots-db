@@ -3,6 +3,25 @@ const getHeroId = require('./getHeroId')
 
 const talentMap = {}
 
+const loadTalentCache = async (db) => {
+  const talents = await db.request()
+    .query(`
+      SELECT
+        t.TalentId,
+        t.InternalName,
+        h.Name as HeroName
+      FROM
+        Talent t
+        JOIN Hero h
+          ON h.HeroId = t.HeroId
+    `)
+
+  for (const row of talents.recordset) {
+    const key = `${row.HeroName}-${row.InternalName}`
+    talentMap[key] = row.TalentId
+  }
+}
+
 const findOrCreateTalent = async (db, heroName, talentName, tier) => {
   const findTalent = async () => {
     return await db.request()
@@ -50,6 +69,10 @@ module.exports = async (db, heroName, talentName, tier) => {
   }
 
   const key = `${heroName}-${talentName}`
+
+  if (Object.keys(talentMap).length === 0) {
+    await loadTalentCache(db)
+  }
 
   if (!talentMap[key]) {
     talentMap[key] = await findOrCreateTalent(db, heroName, talentName, tier)

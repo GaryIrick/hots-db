@@ -2,7 +2,7 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const uuid = require('uuid').v4
-const { capitalize } = require('lodash')
+const { capitalize, uniqBy } = require('lodash')
 const getCompressedJson = require('./lib/getCompressedJson')
 const getCosmos = require('./db/getCosmos')
 const changeExtension = require('./lib/changeExtension')
@@ -110,9 +110,11 @@ const attachMatch = async (parsedFilesystem, container, db, match, log) => {
       await insertRow(txn, 'MatchGame', game)
     }
 
-    for (const mapBan of mapBans) {
+    // The data has the same ban listed twice sometimes, clean it up.
+    for (const mapBan of uniqBy(mapBans, mb => `${mb.matchId}-${mb.map}-${mb.team}`)) {
       await insertRow(txn, 'MapBan', mapBan)
     }
+
     await txn.commit()
   } catch (err) {
     await txn.rollback()
