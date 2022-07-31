@@ -77,7 +77,7 @@ const attachMatch = async (parsedFilesystem, container, db, match, log) => {
       gameNumber: i + 1,
       replayKey: game.replayKey,
       gameId,
-      winner: game.winner
+      winner: game.winner || 'unknown' // some bad data doesn't have the winner
     })
 
     mapBans.push(...match.homeTeam.mapBans.map(mb => ({ matchId, map: mb, team: 'home' })))
@@ -100,7 +100,7 @@ const attachMatch = async (parsedFilesystem, container, db, match, log) => {
       coast,
       homeTeam: match.homeTeam.name,
       awayTeam: match.awayTeam.name,
-      round: match.round,
+      round: match.round >= 1 ? match.round : null,
       isPlayoffs: match.isPlayoffs ? 1 : 0,
       caster,
       vodLinks

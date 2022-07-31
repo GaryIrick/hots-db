@@ -4,7 +4,7 @@ CREATE TABLE MatchGame
     GameNumber tinyint NOT NULL,
     ReplayKey nvarchar(200) NOT NULL,
     GameId uniqueidentifier NOT NULL CONSTRAINT FK_MatchGame_Game REFERENCES Game(GameId),
-    Winner nvarchar(4) NOT NULL
+    Winner nvarchar(10) NOT NULL
 );
 GO
 
