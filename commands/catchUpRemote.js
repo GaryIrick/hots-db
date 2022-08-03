@@ -1,7 +1,6 @@
 const agent = require('superagent')
 const moment = require('moment')
 const { DefaultAzureCredential } = require('@azure/identity')
-const importReplaysIntoSql = require('../src/importReplaysIntoSql')
 const { azure: { resourceGroup, functionAppUrl, functionAppName }, ngs: { currentSeason } } = require('../src/config')
 
 const getHostKey = async () => {
@@ -56,11 +55,10 @@ const run = async () => {
   const hostKey = await getHostKey()
   log('Finding NGS matches')
   await callAzureFunction('find-ngs-matches', hostKey, { season: currentSeason })
-  await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 1000 }), log)
-  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 1000 }), log)
-  await callUntilZero('Parsing replays', () => callAzureFunction('parse-replays', hostKey, { maxCount: 100 }), log)
-  await callUntilZero('Generating imports', () => callAzureFunction('generate-imports', hostKey, { maxCount: 500 }), log)
-  await callUntilZero('Importing into SQL', () => importReplaysIntoSql(1000, () => {}), log)
+  await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 100 }), log)
+  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
+  await callUntilZero('Parsing replays', () => callAzureFunction('parse-replays', hostKey, { maxCount: 100 }, log))
+  await callUntilZero('Generating imports', () => callAzureFunction('generate-imports', hostKey, { maxCount: 100 }), log)
 }
 
 run().then(() => log('Done.'))

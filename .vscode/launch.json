@@ -110,8 +110,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Catch up",
-            "program": "${workspaceFolder}/commands/catchUp.js",
+            "name": "Catch up - local",
+            "program": "${workspaceFolder}/commands/catchUpLocal.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],
@@ -120,8 +120,18 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch prune directories",
-            "program": "${workspaceFolder}/commands/pruneDirectories.js",
+            "name": "Catch up - remote",
+            "program": "${workspaceFolder}/commands/catchUpRemote.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch prune pending directories",
+            "program": "${workspaceFolder}/commands/prunePendingDirectories.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],

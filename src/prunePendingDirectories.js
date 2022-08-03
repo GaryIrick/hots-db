@@ -6,7 +6,7 @@ const {
   azure: { storage: { account, rawContainer, parsedContainer, sqlImportContainer, sparkImportContainer } }
 } = require('./config')
 
-const prunePendingDirectory = async (datalake, containerName) => {
+const prunePendingDirectory = async (datalake, containerName, log) => {
   const filesystem = datalake.getFileSystemClient(containerName)
   const emptyDirectories = {}
 
@@ -19,7 +19,6 @@ const prunePendingDirectory = async (datalake, containerName) => {
 
       if (item.isDirectory) {
         emptyDirectories[item.name] = 1
-        console.log(`Checking ${containerName}:${item.name}`)
       } else {
         let parent = path.dirname(item.name)
 
@@ -36,15 +35,15 @@ const prunePendingDirectory = async (datalake, containerName) => {
 
   for (const directoryToDelete of directoriesToDelete) {
     const directoryClient = filesystem.getDirectoryClient(directoryToDelete)
-    console.log(`Deleting ${containerName}:${directoryToDelete}`)
+    log(`Deleting ${containerName}:${directoryToDelete}`)
     await directoryClient.delete(false)
   }
 }
 
-module.exports = async (maxCount, log) => {
+module.exports = async (log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
 
   for (const containerName of [rawContainer, parsedContainer, sqlImportContainer, sparkImportContainer]) {
-    await prunePendingDirectory(datalake, containerName)
+    await prunePendingDirectory(datalake, containerName, log)
   }
 }
