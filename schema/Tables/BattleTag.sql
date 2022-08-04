@@ -4,6 +4,7 @@ CREATE TABLE BattleTag
     Name nvarchar(100) NOT NULL,
     Tag nvarchar(10) NOT NULL,
     LastSeen datetime NOT NULL,
+    FullTag AS Name + '#' + Tag,
     CONSTRAINT PK_BattleTag PRIMARY KEY(PlayerId, Name, Tag),
     CONSTRAINT FK_BattleTag_Player FOREIGN KEY (PlayerId) REFERENCES Player(PlayerId) ON DELETE CASCADE
 );
