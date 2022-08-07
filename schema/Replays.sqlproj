@@ -74,6 +74,10 @@
     <Build Include="Tables\Match.sql" />
     <Build Include="Tables\MapBan.sql" />
     <Build Include="Tables\MatchGame.sql" />
+    <Build Include="Tables\Team.sql" />
+    <Build Include="Tables\TeamPlayer.sql" />
+    <Build Include="Tables\DivisionSort.sql" />
+    <Build Include="Views\BoxScoreEx.sql" />
   </ItemGroup>
   <ItemGroup>
     <RefactorLog Include="Replays.refactorlog" />

@@ -1,11 +1,13 @@
 const moment = require('moment')
+const findNgsTeams = require('../src/findNgsTeams')
 const findNgsMatches = require('../src/findNgsMatches')
 const copyNgsMatches = require('../src/copyNgsMatches')
 const findStormLeagueGames = require('../src/findStormLeagueGames')
 const parseReplays = require('../src/parseReplays')
 const generateImports = require('../src/generateImports')
 const importReplaysIntoSql = require('../src/importReplaysIntoSql')
-const attachNgsMatches = require('../src/attachNgsMatches')
+const importNgsTeams = require('../src/importNgsTeams')
+const importNgsMatches = require('../src/importNgsMatches')
 const prunePendingDirectories = require('../src/prunePendingDirectories')
 const { ngs: { currentSeason } } = require('../src/config')
 
@@ -34,6 +36,8 @@ const log = (msg) => {
 }
 
 const run = async () => {
+  log('Finding NGS teams')
+  await findNgsTeams(log)
   log('Finding NGS matches')
   await findNgsMatches(currentSeason, log)
   await callUntilZero('Copying NGS matches', () => copyNgsMatches(100, () => {}), log)
@@ -43,8 +47,9 @@ const run = async () => {
   }, log)
   await callUntilZero('Parsing replays', () => parseReplays(100, () => {}), log)
   await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
-  await callUntilZero('Importing into SQL', () => importReplaysIntoSql(100, () => {}), log)
-  await callUntilZero('Attaching NGS matches in SQL', () => attachNgsMatches(100, () => {}), log)
+  await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
+  await callUntilZero('importing NGS teams into SQL', () => importNgsTeams(100, () => {}), log)
+  await callUntilZero('importing NGS matches into SQL', () => importNgsMatches(100, () => {}), log)
   log('Pruning pending directories')
   await prunePendingDirectories(log)
 }

@@ -176,7 +176,7 @@ const normalizeMatch = (match, ourSide) => {
 const updateTeam = async (teamData, season, homeMatches, awayMatches, container) => {
   const matches = homeMatches.map(m => normalizeMatch(m, 'home')).concat(awayMatches.map(m => normalizeMatch(m, 'away', season)))
   const foundTeam = await container.item(teamData.id, teamData.id).read()
-  const team = foundTeam.resource || { id: teamData.id, name: teamData.name, logo: teamData.logo }
+  const team = foundTeam.resource || { id: teamData.id, name: teamData.name, logo: teamData.logo, isActive: false, status: {} }
   const seasons = (team.seasons || []).filter(s => s.season !== season)
   seasons.push({
     season,

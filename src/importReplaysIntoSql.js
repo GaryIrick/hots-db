@@ -39,19 +39,19 @@ const getPlayerId = async (db, toonHandle, name, tag) => {
       .input('name', name)
       .input('tag', tag)
       .query(`
-      MERGE Player AS tgt
-      USING
-      (
-        SELECT @toonHandle, @region, @name, @tag
-      ) src (ToonHandle, Region, Name, Tag)
-        ON src.ToonHandle = tgt.ToonHandle
-      WHEN MATCHED THEN
-        UPDATE SET Name = src.Name, Tag = src.Tag
-      WHEN NOT MATCHED THEN
-        INSERT(PlayerId, ToonHandle, Region, Name, Tag)
-        VALUES(NEWID(), src.ToonHandle, src.Region, src.Name, src.Tag)
-      OUTPUT
-        inserted.PlayerId
+        MERGE Player AS tgt
+        USING
+        (
+          SELECT @toonHandle, @region, @name, @tag
+        ) src (ToonHandle, Region, Name, Tag)
+          ON src.ToonHandle = tgt.ToonHandle
+        WHEN MATCHED THEN
+          UPDATE SET Name = src.Name, Tag = src.Tag
+        WHEN NOT MATCHED THEN
+          INSERT(PlayerId, ToonHandle, Region, Name, Tag)
+          VALUES(NEWID(), src.ToonHandle, src.Region, src.Name, src.Tag)
+        OUTPUT
+          inserted.PlayerId
     `)
 
     const playerId = result.recordset[0].PlayerId

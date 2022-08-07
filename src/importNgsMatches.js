@@ -1,32 +1,17 @@
-// E_NOTIMPL: Add tables for NGS teams.
+// E_NOTIMPL: Change *Team to *TeamId.  or *TeamNgsId?
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const uuid = require('uuid').v4
-const { capitalize, uniqBy } = require('lodash')
+const { uniqBy } = require('lodash')
 const getCompressedJson = require('./lib/getCompressedJson')
 const getCosmos = require('./db/getCosmos')
 const changeExtension = require('./lib/changeExtension')
+const getDivisionNameParts = require('./lib/getDivisionNameParts')
 const getSqlServer = require('./db/getSqlServer')
 const insertRow = require('./db/insertRow')
 const {
   azure: { cosmos: { matchesContainer }, storage: { account, parsedContainer } }
 } = require('./config')
-
-const getDivisionNameParts = (divisionName) => {
-  if (divisionName.includes('-')) {
-    const parts = divisionName.split('-')
-
-    return {
-      division: capitalize(parts[0]),
-      coast: capitalize(parts[1])
-    }
-  } else {
-    return {
-      division: capitalize(divisionName),
-      coast: null
-    }
-  }
-}
 
 const getGameFingerprint = async (parsedFilesystem, season, replayKey) => {
   const processedPath = `processed/ngs/season-${season}/${changeExtension(replayKey, 'parse.json.gz')}`
@@ -53,7 +38,7 @@ const getGameIdFromFingerprint = async (db, fingerprint) => {
   }
 }
 
-const attachMatch = async (parsedFilesystem, container, db, match, log) => {
+const importMatch = async (parsedFilesystem, container, db, match, log) => {
   const games = []
   const mapBans = []
   const matchId = uuid()
@@ -99,7 +84,9 @@ const attachMatch = async (parsedFilesystem, container, db, match, log) => {
       division,
       coast,
       homeTeam: match.homeTeam.name,
-      awayTeam: match.awayTeam.name,
+      homeNgsTeamId: match.homeTeam.id,
+      awayTeam: match.awayTeam.id,
+      awayNgsTeamId: match.awayTeam.name,
       round: match.round >= 1 ? match.round : null,
       isPlayoffs: match.isPlayoffs ? 1 : 0,
       caster,
@@ -123,7 +110,7 @@ const attachMatch = async (parsedFilesystem, container, db, match, log) => {
   }
 
   await container.item(match.id, match.id).patch([
-    { op: 'set', path: '/status/isAttached', value: true }
+    { op: 'set', path: '/status/isImported', value: true }
   ])
 
   return true
@@ -140,7 +127,7 @@ module.exports = async (maxCount, log) => {
   const query = container.items.query(`
     SELECT m.id, m.season, m.division, m.round, m.isPlayoffs, m.games, m.homeTeam, m.awayTeam, m.caster, m.vodLinks
     FROM m 
-    WHERE m.status.isCopied = true AND (m.status.isAttached = false OR NOT ISDEFINED(m.status.isAttached))`)
+    WHERE m.status.isCopied = true AND (m.status.isImported = false OR NOT ISDEFINED(m.status.isImported))`)
 
   while (keepGoing) {
     const response = await query.fetchNext()
@@ -150,8 +137,8 @@ module.exports = async (maxCount, log) => {
         break
       }
 
-      if (await attachMatch(parsedFilesystem, container, db, match, log)) {
-        log(`Attached match ${match.id}.`)
+      if (await importMatch(parsedFilesystem, container, db, match, log)) {
+        log(`Imported match ${match.id}.`)
         count++
       } else {
         log(`Skipped match ${match.id}.`)
@@ -163,7 +150,7 @@ module.exports = async (maxCount, log) => {
 
   await db.close()
 
-  log(`Attached ${count} matches.`)
+  log(`Imported ${count} matches.`)
 
   return count
 }

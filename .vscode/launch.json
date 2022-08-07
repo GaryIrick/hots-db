@@ -98,8 +98,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch attach NGS matches",
-            "program": "${workspaceFolder}/commands/attachNgsMatches.js",
+            "name": "Launch import NGS teams",
+            "program": "${workspaceFolder}/commands/importNgsTeams.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "1"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch import NGS matches",
+            "program": "${workspaceFolder}/commands/importNgsMatches.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],
