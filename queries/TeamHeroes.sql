@@ -1,16 +1,9 @@
-DECLARE @tags AS TABLE(FullTag nvarchar(120))
-INSERT INTO @tags
-VALUES
-  (''),
-  (''),
-  (''),
-  (''),
-  (''),
-  (''),
-  (''),
-  (''),
-  ('')
-;
+DECLARE @teamName nvarchar(100);
+DECLARE @teamId uniqueidentifier;
+
+SET @teamName = ''
+
+SELECT @teamId = TeamId FROM Team WHERE Name = @teamName;
 
 DECLARE @sources as TABLE(source nvarchar(4))
 INSERT INTO @sources
@@ -36,21 +29,21 @@ DECLARE @targetWinRate AS float = 0.00;
 WITH players AS
 (
   SELECT
-    bt.PlayerId,
-    bt.FullTag AS Tag
+    tp.PlayerId,
+    p.Name
   FROM
-    @tags t
-    JOIN BattleTag bt
-    ON bt.FullTag = t.FullTag
+    TeamPlayer tp
     JOIN Player p
-    ON p.PlayerId = bt.PlayerId
+      ON p.PlayerId = tp.PlayerId
+  WHERE
+    tp.TeamId = @teamId
 ),
 heroes AS
 (
   SELECT
     h.Role,
     h.Name AS Hero,
-    p.Tag AS Player,
+    p.Name AS Player,
     g.Source,
     0.0 + bs.Kills + bs.Assists AS Takedowns,
     0.0 + bs.Deaths AS Deaths,

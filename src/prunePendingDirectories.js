@@ -9,6 +9,7 @@ const {
 const prunePendingDirectory = async (datalake, containerName, log) => {
   const filesystem = datalake.getFileSystemClient(containerName)
   const emptyDirectories = {}
+  let count = 0
 
   for await (const page of filesystem.listPaths({ path: 'pending/', recursive: true }).byPage({ maxPageSize: 1000 })) {
     for (const item of page.pathItems) {
@@ -37,13 +38,17 @@ const prunePendingDirectory = async (datalake, containerName, log) => {
     const directoryClient = filesystem.getDirectoryClient(directoryToDelete)
     log(`Deleting ${containerName}:${directoryToDelete}`)
     await directoryClient.delete(false)
+    count++
   }
+
+  return count
 }
 
 module.exports = async (log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
+  let count = 0
 
   for (const containerName of [rawContainer, parsedContainer, sqlImportContainer, sparkImportContainer]) {
-    await prunePendingDirectory(datalake, containerName, log)
+    count = count + await prunePendingDirectory(datalake, containerName, log)
   }
 }

@@ -14,5 +14,5 @@ CREATE TABLE Game
 );
 GO
 
-CREATE INDEX IX_Game_Fingerprint ON Game(Fingerprint);
+CREATE UNIQUE INDEX IX_Game_Fingerprint ON Game(Fingerprint);
 GO
