@@ -99,7 +99,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch import NGS teams",
-            "program": "${workspaceFolder}/commands/importNgsTeams.js",
+            "program": "${workspaceFolder}/commands/importNgsTeamsIntoSql.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],
@@ -111,7 +111,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch import NGS matches",
-            "program": "${workspaceFolder}/commands/importNgsMatches.js",
+            "program": "${workspaceFolder}/commands/importNgsMatchesIntoSql.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],

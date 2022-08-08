@@ -71,6 +71,12 @@ const importMatch = async (parsedFilesystem, container, db, match, log) => {
 
   const { division, coast } = getDivisionNameParts(match.division)
 
+  // If we've seen this match before, get rid of it.
+  await db
+    .request()
+    .input('ngsMatchId', match.id)
+    .query('DELETE FROM Match WHERE NgsMatchId = @ngsMatchId')
+
   const txn = db.transaction()
   await txn.begin()
   const caster = match.caster && match.caster.length > 0 ? match.caster : null
@@ -85,8 +91,8 @@ const importMatch = async (parsedFilesystem, container, db, match, log) => {
       coast,
       homeTeam: match.homeTeam.name,
       homeNgsTeamId: match.homeTeam.id,
-      awayTeam: match.awayTeam.id,
-      awayNgsTeamId: match.awayTeam.name,
+      awayTeam: match.awayTeam.name,
+      awayNgsTeamId: match.awayTeam.id,
       round: match.round >= 1 ? match.round : null,
       isPlayoffs: match.isPlayoffs ? 1 : 0,
       caster,
