@@ -51,4 +51,6 @@ module.exports = async (log) => {
   for (const containerName of [rawContainer, parsedContainer, sqlImportContainer, sparkImportContainer]) {
     count = count + await prunePendingDirectory(datalake, containerName, log)
   }
+
+  return count
 }
