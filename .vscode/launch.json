@@ -142,6 +142,20 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Generate scouting report",
+            "program": "${workspaceFolder}/commands/generateScoutingReport.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "60ecdeea7e0a9d0022d219b5",
+                "13",
+                "14"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch prune pending directories",
             "program": "${workspaceFolder}/commands/prunePendingDirectories.js",
             "skipFiles": [
