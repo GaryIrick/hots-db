@@ -16,7 +16,7 @@ SELECT 'Infernal Shrines', 7 UNION
 SELECT 'Sky Temple', 8 UNION
 SELECT 'Tomb of the Spider Queen', 9 UNION
 SELECT 'Towers of Doom', 10  UNION
-SELECT 'Vol''skaya Foundry', 11
+SELECT 'Volskaya Foundry', 11
 
 DECLARE @teamId uniqueidentifier
 DECLARE @playerIds TABLE(PlayerId uniqueidentifier)
