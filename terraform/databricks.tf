@@ -8,12 +8,7 @@ module "db_workspace" {
 }
 
 data "databricks_spark_version" "latest" {
-}
-
-data "databricks_node_type" "all_purpose_node" {
-  local_disk = false
-  min_cores  = 4
-  category   = "General Purpose"
+  long_term_support = true
 }
 
 resource "azuread_application" "db_app" {
@@ -42,13 +37,17 @@ resource "databricks_secret" "service_principal_key" {
   string_value = azuread_service_principal_password.db_service_principal_password.value
 }
 
-// Making changes to anyhing related to the cluster or workspace may cause the cluster to start up!
+// Even just running "terraform plan" may cause the cluster to start up.  Sigh.
 
 resource "databricks_cluster" "all_purpose_cluster" {
-  cluster_name            = "All Purpose"
-  idempotency_token       = "all-purpose"
-  spark_version           = data.databricks_spark_version.latest.id
-  node_type_id            = data.databricks_node_type.all_purpose_node.id
+  cluster_name        = "All Purpose"
+  idempotency_token   = "all-purpose"
+  spark_version       = data.databricks_spark_version.latest.id
+  node_type_id        = "Standard_DS3_v2"
+  driver_node_type_id = "Standard_DS3_v2"
+  #  node_type_id        = "Standard_D4ds_v5"
+  #  driver_node_type_id = "Standard_D4ds_v5"
+
   autotermination_minutes = 30
   is_pinned               = true
 
@@ -96,7 +95,11 @@ resource "azurerm_role_assignment" "db_storage_contributor_access" {
 # It's not worth the effort to set up Git integration here, we'll just do it in the UI.
 
 output "node_type" {
-  value = data.databricks_node_type.all_purpose_node.id
+  value = databricks_cluster.all_purpose_cluster.node_type_id
+}
+
+output "driver_node_type" {
+  value = databricks_cluster.all_purpose_cluster.driver_node_type_id
 }
 
 output "spark_version" {

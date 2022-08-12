@@ -36,7 +36,7 @@ resource "azuread_service_principal_password" "datafactory_service_principal_pas
 resource "azurerm_key_vault_secret" "datafactory_service_principal_key" {
   name         = "datafactory-service-principal-key"
   key_vault_id = azurerm_key_vault.key_vault.id
-  value        = azuread_service_principal_password.db_service_principal_password.value
+  value        = azuread_service_principal_password.datafactory_service_principal_password.value
 }
 resource "azurerm_role_assignment" "datafactory_storage_contributor_access" {
 
