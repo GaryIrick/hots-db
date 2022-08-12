@@ -18,19 +18,29 @@ resource "azurerm_data_factory" "factory" {
   }
 }
 
-resource "azurerm_data_factory_linked_service_key_vault" "factory_key_value_link" {
-  name            = "hots-db-factory-key-vault"
-  data_factory_id = azurerm_data_factory.factory.id
-  key_vault_id    = azurerm_key_vault.key_vault.id
+resource "azuread_application" "datafactory_app" {
+  display_name = "DataFactory HOTS-DB"
+  owners       = [data.azuread_client_config.current.object_id]
 }
 
-resource "azurerm_data_factory_linked_service_azure_function" "factory_functions_link" {
-  name            = "hots-db-factory-functions"
-  data_factory_id = azurerm_data_factory.factory.id
-  url             = "https://${azurerm_function_app.hots_db_functions.default_hostname}"
+resource "azuread_service_principal" "datafactory_service_principal" {
+  application_id = azuread_application.datafactory_app.application_id
+}
 
-  key_vault_key {
-    linked_service_name = azurerm_data_factory_linked_service_key_vault.factory_key_value_link.name
-    secret_name         = "functions-key"
-  }
+resource "azuread_service_principal_password" "datafactory_service_principal_password" {
+  service_principal_id = azuread_service_principal.datafactory_service_principal.id
+  display_name         = "DataFactory service principal password"
+  end_date_relative    = "17520h" # 2 years
+}
+
+resource "azurerm_key_vault_secret" "datafactory_service_principal_key" {
+  name         = "datafactory-service-principal-key"
+  key_vault_id = azurerm_key_vault.key_vault.id
+  value        = azuread_service_principal_password.db_service_principal_password.value
+}
+resource "azurerm_role_assignment" "datafactory_storage_contributor_access" {
+
+  scope                = azurerm_storage_account.hots_db_data.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azuread_service_principal.datafactory_service_principal.object_id
 }
