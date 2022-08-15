@@ -51,15 +51,24 @@ resource "databricks_cluster" "all_purpose_cluster" {
   autotermination_minutes = 30
   is_pinned               = true
 
-  autoscale {
-    min_workers = 1
-    max_workers = 4
+  spark_conf = {
+    "spark.databricks.cluster.profile" : "singleNode"
+    "spark.master" : "local[*]"
   }
 
-  azure_attributes {
-    availability    = "SPOT_WITH_FALLBACK_AZURE"
-    first_on_demand = 1
+  custom_tags = {
+    "ResourceClass" = "SingleNode"
   }
+
+  # autoscale {
+  #   min_workers = 1
+  #   max_workers = 4
+  # }
+
+  # azure_attributes {
+  #   availability    = "SPOT_WITH_FALLBACK_AZURE"
+  #   first_on_demand = 1
+  # }
 }
 
 resource "databricks_mount" "import_storage_mount" {

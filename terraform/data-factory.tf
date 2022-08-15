@@ -39,8 +39,13 @@ resource "azurerm_key_vault_secret" "datafactory_service_principal_key" {
   value        = azuread_service_principal_password.datafactory_service_principal_password.value
 }
 resource "azurerm_role_assignment" "datafactory_storage_contributor_access" {
-
   scope                = azurerm_storage_account.hots_db_data.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azuread_service_principal.datafactory_service_principal.object_id
+}
+
+resource "azurerm_role_assignment" "datafactory_databricks_contributor_access" {
+  scope                = module.db_workspace.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_data_factory.factory.identity[0].principal_id
 }
