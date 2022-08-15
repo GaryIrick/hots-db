@@ -21,7 +21,8 @@ VALUES
   (10),
   (11),
   (12),
-  (13)
+  (13),
+  (14)
 ;
 
 DECLARE @targetWinRate AS float = 0.00;
