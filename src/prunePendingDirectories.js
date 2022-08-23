@@ -48,7 +48,8 @@ module.exports = async (log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   let count = 0
 
-  for (const containerName of [rawContainer, parsedContainer, sqlImportContainer, sparkImportContainer]) {
+  // We aren't doing anything with the data in Spark yet, ignore that container.
+  for (const containerName of [rawContainer, parsedContainer, sqlImportContainer/*, sparkImportContainer */]) {
     count = count + await prunePendingDirectory(datalake, containerName, log)
   }
 

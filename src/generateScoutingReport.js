@@ -84,13 +84,22 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
   const quartets = []
   const quintets = []
   const maps = []
+  const opponentBans = []
 
   for (const season of teamData.seasons.filter(s => s.season >= startSeason && s.season <= endSeason)) {
     for (const match of season.matches) {
       for (const game of match.games) {
         const importPath = getSqlImportPath(season.season, game)
-        const json = await getCompressedJson(sqlImportFilesystem, importPath)
+        let json
+        try {
+          json = await getCompressedJson(sqlImportFilesystem, importPath)
+        } catch (e) {
+          log(`MISSING GAME: ${importPath}`)
+          // This game is missing, just ignore it.
+          continue
+        }
         const team = pickTeam(json, game.isWin)
+        const otherTeam = pickTeam(json, !game.isWin)
 
         let map = maps.find(m => m.name === game.map)
 
@@ -100,15 +109,12 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
         }
 
         if (game.isWin) {
-          console.log('WIN on ' + game.map)
           map.wins++
         } else {
-          console.log('LOSS on ' + game.map)
           map.losses++
         }
 
-        if (team.teamNumber === json.firstPickTeam) {
-          console.log('PICK on ' + game.map)
+        if (team.teamNumber !== json.firstPickTeam) {
           map.picks++
         }
 
@@ -146,6 +152,18 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
           bannedHero.rounds.push(ban.round)
         }
 
+        for (const ban of otherTeam.bans) {
+          let bannedHero = opponentBans.find(b => b.hero === ban.hero)
+
+          if (!bannedHero) {
+            bannedHero = { hero: ban.hero, count: 0, rounds: [] }
+            opponentBans.push(bannedHero)
+          }
+
+          bannedHero.count++
+          bannedHero.rounds.push(ban.round)
+        }
+
         const heroNames = team.players.map(p => p.hero)
 
         addCombos(duos, heroNames, 2, game.isWin)
@@ -165,6 +183,10 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
     ban.averagePickRound = mean(ban.rounds)
   }
 
+  for (const ban of opponentBans) {
+    ban.averagePickRound = mean(ban.rounds)
+  }
+
   for (const combo of duos.concat(trios).concat(quartets).concat(quintets)) {
     combo.winRate = mean(combo.wins)
   }
@@ -181,6 +203,12 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
     log(`${ban.hero},${ban.count},${ban.averagePickRound}`)
   }
 
+  log('\nBANS AGAINST\n')
+
+  for (const ban of orderBy(opponentBans, ['winRate'], ['desc'])) {
+    log(`${ban.hero},${ban.count},${ban.averagePickRound}`)
+  }
+
   log('\nCOMBOS\n')
 
   showCombos(2, duos, log)
@@ -190,7 +218,7 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
 
   log('\nMAPS\n')
 
-  for (const map of maps) {
+  for (const map of orderBy(maps, m => m.name)) {
     log(`${map.name},${map.wins},${map.losses},${map.picks}`)
   }
 }
