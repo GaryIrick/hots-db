@@ -72,15 +72,24 @@ const log = (msg) => {
 
 const run = async () => {
   const hostKey = await getHostKey()
+
+  // Do one complete pass to pick up the NGS games first, because I am usually impatient and want the NGS data first.
   await callOnce('Finding NGS teams', () => findNgsTeams(() => {}), log)
   await callOnce('Finding NGS matches', () => findNgsMatches(currentSeason, () => {}), log)
   await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 100 }), log)
-  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
   await callUntilZero('Parsing replays', () => parseReplays(100, () => {}), log)
   await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
   await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
   await callUntilZero('importing NGS teams into SQL', () => importNgsTeamsIntoSql(100, () => {}), log)
   await callUntilZero('importing NGS matches into SQL', () => importNgsMatchesIntoSql(100, () => {}), log)
+
+  // Now look for Storm League, and repeat the relevant parts of the process.
+  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
+  await callUntilZero('Parsing replays', () => parseReplays(100, () => {}), log)
+  await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
+  await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
+
+  // Get rid of empty directories in the "pending" folder of each storage container.
   await callOnce('Pruning pending directories', () => prunePendingDirectories(() => {}), log)
 }
 
