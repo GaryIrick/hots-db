@@ -12,3 +12,6 @@ GO
 
 CREATE INDEX IX_BattleTag_Player ON BattleTag(PlayerId);
 GO
+
+CREATE INDEX IX_BattleTag_FullTag ON BattleTag(FullTag);
+GO
