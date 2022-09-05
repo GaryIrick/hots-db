@@ -50,6 +50,19 @@ module.exports = {
   ngs: {
     apiUrl: 'https://www.nexusgamingseries.org/api',
     bucket: 'ngs-replay-storage',
-    currentSeason: 14
+    currentSeason: 14,
+    currentMapPool: [
+      'Alterac Pass',
+      'Battlefield of Eternity',
+      'Braxis Holdout',
+      'Cursed Hollow',
+      'Dragon Shire',
+      'Garden of Terror',
+      'Infernal Shrines',
+      'Sky Temple',
+      'Tomb of the Spider Queen',
+      'Towers of Doom',
+      'Volskaya Foundry'
+    ]
   }
 }

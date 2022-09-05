@@ -1,12 +1,12 @@
 const generateScoutingReport = require('../src/generateScoutingReport')
 
-const run = async (ngsTeamId, startSeason, endSeason) => {
-  await generateScoutingReport(ngsTeamId, startSeason, endSeason, console.log)
+const run = async (ourTeam, theirTeam, startSeason, endSeason) => {
+  await generateScoutingReport(ourTeam, theirTeam, startSeason, endSeason, console.log)
 }
 
-if (process.argv.length !== 5) {
-  console.log('Usage: generateImports <NGS team ID> <startSeason> <endSeason>')
+if (process.argv.length !== 6) {
+  console.log('Usage: generateImports <our team name> <their team name> <startSeason> <endSeason>')
   process.exit(1)
 }
 
-run(process.argv[2], Number(process.argv[3]), Number(process.argv[4]))
+run(process.argv[2], process.argv[3], Number(process.argv[4]), Number(process.argv[5]))

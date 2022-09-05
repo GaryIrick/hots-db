@@ -473,3 +473,4 @@ FodyWeavers.xsd
 hots-db.zip
 **/*.refactorlog
 **/*.csv
+**/*.xlsx

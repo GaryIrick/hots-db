@@ -1,16 +1,44 @@
+const fs = require('fs')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
-const { mean, orderBy } = require('lodash')
+const { mean, orderBy, map } = require('lodash')
 const { combinations } = require('combinatorial-generators')
+const xl = require('excel4node')
+const chroma = require('chroma-js')
 const getCosmos = require('./db/getCosmos')
 const getCompressedJson = require('./lib/getCompressedJson')
 const changeExtension = require('./lib/changeExtension')
-const { azure: { cosmos: { teamsContainer }, storage: { account, sqlImportContainer } } } = require('./config')
+const {
+  azure: {
+    cosmos: {
+      teamsContainer: teamsContainerName
+    },
+    storage:
+    {
+      account,
+      sqlImportContainer: sqlImportContainerName
+    }
+  },
+  ngs: {
+    currentMapPool
+  }
+} = require('./config')
 
-const getTeamData = async (container, id) => {
-  const query = container.item(id, id)
-  const result = await query.read()
-  return result.resource
+const colors = {
+  topHeader: '#FCE4D6',
+  subHeader: '#D9E1F2'
+}
+
+const getTeamByName = async (container, teamName) => {
+  const query = container.items.query(`SELECT * FROM t WHERE t.name = '${teamName}'`)
+  const response = await query.fetchNext()
+  if (response.resources.length === 0) {
+    throw new Error(`Team ${teamName} does not exist.`)
+  } else if (response.resources.length > 1) {
+    throw new Error(`Multiple teams named ${teamName} exist.`)
+  }
+
+  return response.resources[0]
 }
 
 const firstPickRounds = [1, 2, 2, 3, 3]
@@ -47,37 +75,26 @@ const getSqlImportPath = (season, game) => {
   return `processed/ngs/season-${season}/${changeExtension(game.replayKey, 'import.json.gz')}`
 }
 
-const addCombos = (combos, heroes, size, isWin) => {
-  for (const possibleCombo of combinations(heroes, size)) {
+const addCombos = (combos, picks, size, isWin) => {
+  for (const possibleCombo of combinations(picks, size)) {
     const heroList = orderBy(possibleCombo).join(' + ')
 
     let combo = combos.find(h => h.heroList === heroList)
 
     if (!combo) {
-      combo = { heroList, count: 0, wins: [] }
+      combo = { heroList, count: 0, isWin: [] }
       combos.push(combo)
     }
 
     combo.count++
-    combo.wins.push(isWin ? 1 : 0)
+    combo.isWin.push(isWin ? 1 : 0)
   }
 }
 
-const showCombos = (size, combos, log) => {
-  for (const combo of orderBy(combos, ['winRate', 'count'], ['desc', 'desc']).filter(c => c.count > 1)) {
-    log(`${size},${combo.heroList},${combo.count},${combo.winRate},`)
-  }
-}
+const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startSeason, endSeason, log) => {
+  const teamData = await getTeamByName(teamsContainer, teamName)
 
-module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
-  const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
-  const sqlImportFilesystem = datalake.getFileSystemClient(sqlImportContainer)
-  const container = await getCosmos(teamsContainer, true)
-  const teamData = await getTeamData(container, ngsTeamId)
-
-  log(`Team: ${teamData.name}`)
-
-  const heroes = []
+  const picks = []
   const bans = []
   const duos = []
   const trios = []
@@ -94,7 +111,7 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
         try {
           json = await getCompressedJson(sqlImportFilesystem, importPath)
         } catch (e) {
-          log(`MISSING GAME: ${importPath}`)
+          log(`MISSING GAME for ${teamName}: ${importPath}`)
           // This game is missing, just ignore it.
           continue
         }
@@ -118,26 +135,26 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
           map.picks++
         }
 
-        const heroesThisGame = []
+        const picksThisGame = []
 
         for (const player of team.players) {
           if (!teamData.players.includes(`${player.name}#${player.tag}`)) {
-            // This player is not on the active roster, skip it.
+            // This player is not on the active roster, skip them.
             continue
           }
 
-          heroesThisGame.push(player.hero)
+          picksThisGame.push(player.hero)
 
-          let hero = heroes.find(h => h.hero === player.hero)
+          let hero = picks.find(h => h.hero === player.hero)
 
           if (!hero) {
-            hero = { hero: player.hero, count: 0, rounds: [], wins: [] }
-            heroes.push(hero)
+            hero = { hero: player.hero, count: 0, rounds: [], isWin: [] }
+            picks.push(hero)
           }
 
           hero.count++
           hero.rounds.push(player.round)
-          hero.wins.push(game.isWin ? 1 : 0)
+          hero.isWin.push(game.isWin ? 1 : 0)
         }
 
         for (const ban of team.bans) {
@@ -174,51 +191,124 @@ module.exports = async (ngsTeamId, startSeason, endSeason, log) => {
     }
   }
 
-  for (const hero of heroes) {
-    hero.winRate = mean(hero.wins)
-    hero.averagePickRound = mean(hero.rounds)
+  for (const pick of picks) {
+    pick.winRate = mean(pick.isWin)
+    pick.averagePickRound = mean(pick.rounds)
   }
 
   for (const ban of bans) {
-    ban.averagePickRound = mean(ban.rounds)
+    ban.averageBanRound = mean(ban.rounds)
   }
 
   for (const ban of opponentBans) {
-    ban.averagePickRound = mean(ban.rounds)
+    ban.averageBanRound = mean(ban.rounds)
   }
 
   for (const combo of duos.concat(trios).concat(quartets).concat(quintets)) {
-    combo.winRate = mean(combo.wins)
+    combo.winRate = mean(combo.isWin)
   }
 
-  log('\nHEROES\n')
+  return {
+    name: teamName,
+    maps,
+    picks,
+    bans,
+    opponentBans,
+    combos: duos.concat(trios).concat(quartets).concat(quintets)
+  }
+}
 
-  for (const hero of orderBy(heroes, ['winRate'], ['desc'])) {
-    log(`${hero.hero},${hero.count},${hero.winRate},${hero.averagePickRound}`)
+const getFill = (color) => ({ type: 'pattern', patternType: 'solid', fgColor: color })
+const winRateScale = chroma.scale(['white', chroma('green')])
+
+const getWinRateStyle = (winRate) => {
+  return { fill: { type: 'pattern', patternType: 'solid', fgColor: winRateScale(winRate).hex() } }
+}
+
+const fillMapSheet = (ws, ourMaps, theirMaps) => {
+  const firstMapRow = 5
+  let mapRow = firstMapRow
+  let lastMapRow = firstMapRow
+
+  for (const mapName of currentMapPool) {
+    ws.cell(mapRow, 1).string(mapName)
+    const ourMap = ourMaps.find(m => m.name === mapName)
+    const theirMap = theirMaps.find(m => m.name === mapName)
+
+    if (ourMap) {
+      const winRate = ourMap.wins / (ourMap.wins + ourMap.losses)
+      ws.cell(mapRow, 2).string(`${ourMap.wins} - ${ourMap.losses}`)
+      ws.cell(mapRow, 3).number(winRate).style(getWinRateStyle(winRate))
+
+      if (ourMap.picks > 0) {
+        ws.cell(mapRow, 4).number(ourMap.picks)
+      }
+    }
+
+    if (theirMap) {
+      const winRate = theirMap.wins / (theirMap.wins + theirMap.losses)
+      ws.cell(mapRow, 6).string(`${theirMap.wins} - ${theirMap.losses}`)
+      ws.cell(mapRow, 7).number(winRate).style(getWinRateStyle(winRate))
+
+      if (theirMap.picks > 0) {
+        ws.cell(mapRow, 8).number(theirMap.picks)
+      }
+    }
+
+    lastMapRow = mapRow
+    mapRow++
   }
 
-  log('\nBANS\n')
+  ws.column(1).width = 30
+  ws.column(5).width = 5
+  ws.cell(firstMapRow, 2, lastMapRow, 8).style({ alignment: { horizontal: 'center' } })
+  ws.cell(firstMapRow, 3, lastMapRow, 3).style({ numberFormat: '#%; -#%; 0%' })
+  ws.cell(firstMapRow, 7, lastMapRow, 7).style({ numberFormat: '#%; -#%; 0%' })
 
-  for (const ban of orderBy(bans, ['winRate'], ['desc'])) {
-    log(`${ban.hero},${ban.count},${ban.averagePickRound}`)
-  }
+  ws.cell(1, 2, 1, 8, true)
+    .string('Maps')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+  ws.cell(3, 2, 3, 4, true)
+    .string('Us')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(3, 6, 3, 8, true)
+    .string('Them')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 2)
+    .string('Record')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 3)
+    .string('Win %')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 4)
+    .string('Picked')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 6)
+    .string('Record')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 7)
+    .string('Win %')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 8)
+    .string('Picked')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+}
 
-  log('\nBANS AGAINST\n')
+const generateWorkbook = async (ourTeamData, theirTeamData) => {
+  const wb = new xl.Workbook()
+  const mapSheet = wb.addWorksheet('Maps')
+  fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
+  return await wb.writeToBuffer()
+}
 
-  for (const ban of orderBy(opponentBans, ['winRate'], ['desc'])) {
-    log(`${ban.hero},${ban.count},${ban.averagePickRound}`)
-  }
+module.exports = async (ourTeam, theirTeam, startSeason, endSeason, log) => {
+  const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
+  const sqlImportFilesystem = datalake.getFileSystemClient(sqlImportContainerName)
+  const teamsContainer = await getCosmos(teamsContainerName, true)
 
-  log('\nCOMBOS\n')
+  const ourTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, ourTeam, startSeason, endSeason, log)
+  const theirTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, theirTeam, startSeason, endSeason, log)
 
-  showCombos(2, duos, log)
-  showCombos(3, trios, log)
-  showCombos(4, quartets, log)
-  showCombos(5, quintets, log)
-
-  log('\nMAPS\n')
-
-  for (const map of orderBy(maps, m => m.name)) {
-    log(`${map.name},${map.wins},${map.losses},${map.picks}`)
-  }
+  const xlsx = await generateWorkbook(ourTeamData, theirTeamData)
+  fs.writeFileSync(`${ourTeam.replace(/ /g, '')}-vs-${theirTeam.replace(/ /g, '')}.xlsx`, xlsx)
 }
