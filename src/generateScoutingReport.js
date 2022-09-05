@@ -244,7 +244,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
 
 const getFill = (color) => ({ type: 'pattern', patternType: 'solid', fgColor: color })
 const winRateScale = chroma.scale(['white', chroma('green')])
-const lossRateScale = chroma.scale(['white', chroma('red').brighten()])
+const lossRateScale = chroma.scale(['white', chroma('red')])
 
 const getWinRateStyle = (winRate) => {
   // If there's no color, don't set a style at all.  This prevents the border from disappearing,
@@ -385,9 +385,9 @@ const fillHeroesSheet = async (ws, heroData, title) => {
   ws.column(3).width = 20
 }
 
-const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
+const fillWithAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
   ws.cell(1, 1, 1, 15, true)
-    .string('For and Against')
+    .string('With and Against')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
 
   const heroCount = 15
@@ -396,37 +396,37 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
   const minGames = 2
 
   ws.cell(firstUsRow - 1, 1, firstUsRow - 1, 3, true)
-    .string('For Us - Good')
+    .string('When We Pick - Good')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
   ws.cell(firstUsRow - 1, 5, firstUsRow - 1, 7, true)
-    .string('For Us - Bad')
+    .string('When We Pick - Bad')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
   ws.cell(firstUsRow - 1, 9, firstUsRow - 1, 11, true)
-    .string('Against Us - Good')
+    .string('When We Face - Good')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
   ws.cell(firstUsRow - 1, 13, firstUsRow - 1, 15, true)
-    .string('Against Us - Bad')
+    .string('When We Face - Bad')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
   ws.cell(firstThemRow - 1, 1, firstThemRow - 1, 3, true)
-    .string('For Them - Good')
+    .string('When They Pick - Good')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
   ws.cell(firstThemRow - 1, 5, firstThemRow - 1, 7, true)
-    .string('For Them - Bad')
+    .string('When They Pick - Bad')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
   ws.cell(firstThemRow - 1, 9, firstThemRow - 1, 11, true)
-    .string('Against Them - Good')
+    .string('When They Face - Good')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
   ws.cell(firstThemRow - 1, 13, firstThemRow - 1, 15, true)
-    .string('Against Them - Bad')
+    .string('When They Face - Bad')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
-  const ourGoodPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
-  const ourBadPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
-  const ourOpponentGoodPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
-  const ourOpponentBadPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const ourGoodPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const ourBadPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const ourOpponentGoodPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const ourOpponentBadPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
 
   let currentRow = firstUsRow
 
@@ -450,8 +450,8 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
 
   for (const pick of ourOpponentGoodPicks) {
     ws.cell(currentRow, 9).string(pick.hero)
-    ws.cell(currentRow, 10).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
-    ws.cell(currentRow, 11).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(1 - pick.winRate))
+    ws.cell(currentRow, 10).string(`${pick.losses} - ${pick.wins}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 11).number(1 - pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(1 - pick.winRate))
     currentRow++
   }
 
@@ -459,15 +459,15 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
 
   for (const pick of ourOpponentBadPicks) {
     ws.cell(currentRow, 13).string(pick.hero)
-    ws.cell(currentRow, 14).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
-    ws.cell(currentRow, 15).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    ws.cell(currentRow, 14).string(`${pick.losses} - ${pick.wins}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 15).number(1 - pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
     currentRow++
   }
 
-  const theirGoodPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
-  const theirBadPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
-  const theirOpponentGoodPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
-  const theirOpponentBadPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const theirGoodPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const theirBadPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const theirOpponentGoodPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const theirOpponentBadPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
 
   currentRow = firstThemRow
 
@@ -491,8 +491,8 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
 
   for (const pick of theirOpponentGoodPicks) {
     ws.cell(currentRow, 9).string(pick.hero)
-    ws.cell(currentRow, 10).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
-    ws.cell(currentRow, 11).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(1 - pick.winRate))
+    ws.cell(currentRow, 10).string(`${pick.losses} - ${pick.wins}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 11).number(1 - pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(1 - pick.winRate))
     currentRow++
   }
 
@@ -500,8 +500,8 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
 
   for (const pick of theirOpponentBadPicks) {
     ws.cell(currentRow, 13).string(pick.hero)
-    ws.cell(currentRow, 14).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
-    ws.cell(currentRow, 15).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    ws.cell(currentRow, 14).string(`${pick.losses} - ${pick.wins}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 15).number(1 - pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
     currentRow++
   }
 }
@@ -589,7 +589,7 @@ const fillMatchHistorySheet = (ws, matches) => {
 
   ws.cell(3, 6 + playerCount, 3, 8 + playerCount, true).string('Bans').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.ban) })
   ws.cell(3, 10 + playerCount, 3, 14 + playerCount, true).string('Picks In Order').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.pick) })
-  ws.cell(3, 16 + playerCount, 3, 18 + playerCount, true).string('Bans Against').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
+  ws.cell(3, 16 + playerCount, 3, 18 + playerCount, true).string('Banned By Opponent').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
 
   let currentRow = 5
 
@@ -653,15 +653,15 @@ const fillMatchHistorySheet = (ws, matches) => {
   }
 
   for (let banCol = 6 + playerCount; banCol <= 8 + playerCount; banCol++) {
-    ws.column(banCol).width = 13
+    ws.column(banCol).width = 11
   }
 
   for (let pickCol = 10 + playerCount; pickCol <= 14 + playerCount; pickCol++) {
-    ws.column(pickCol).width = 13
+    ws.column(pickCol).width = 11
   }
 
   for (let opponentBanCol = 16 + playerCount; opponentBanCol <= 18 + playerCount; opponentBanCol++) {
-    ws.column(opponentBanCol).width = 13
+    ws.column(opponentBanCol).width = 11
   }
 }
 
@@ -670,10 +670,10 @@ const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const mapSheet = wb.addWorksheet('Maps')
   const heroesThisSeasonSheet = wb.addWorksheet('Hero Win Rates - This Season')
   const heroesAllTimeSheet = wb.addWorksheet('Hero Win Rates - All Time')
-  const forAndAgainstSheet = wb.addWorksheet('For And Against')
+  const withAndAgainstSheet = wb.addWorksheet('With And Against')
   const picksSheet = wb.addWorksheet('Draft Picks')
   const bansSheet = wb.addWorksheet('Bans')
-  const bansAgainstSheet = wb.addWorksheet('Bans Against')
+  const bansAgainstSheet = wb.addWorksheet('Banned By Opponent')
   const matchHistorySheet = wb.addWorksheet('Match History')
   wb.addWorksheet('Notes')
 
@@ -683,10 +683,10 @@ const generateWorkbook = async (ourTeamData, theirTeamData) => {
   fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
   await fillHeroesSheet(heroesThisSeasonSheet, heroesThisSeason, 'Hero Win Rates - This Season')
   await fillHeroesSheet(heroesAllTimeSheet, heroesAllTime, 'Hero Win Rates - All Time')
-  fillForAndAgainstSheet(forAndAgainstSheet, ourTeamData, theirTeamData)
+  fillWithAndAgainstSheet(withAndAgainstSheet, ourTeamData, theirTeamData)
   fillPicksSheet(picksSheet, orderBy(theirTeamData.picks, p => 0 - p.count))
   fillBansSheet(bansSheet, 'Bans', orderBy(theirTeamData.bans, b => 0 - b.count))
-  fillBansSheet(bansAgainstSheet, 'Opponent Bans', orderBy(theirTeamData.opponentBans, b => 0 - b.count))
+  fillBansSheet(bansAgainstSheet, 'Banned By Opponent', orderBy(theirTeamData.opponentBans, b => 0 - b.count))
   fillMatchHistorySheet(matchHistorySheet, orderBy(theirTeamData.currentSeasonMatches, ['date'], ['desc']))
 
   return await wb.writeToBuffer()
