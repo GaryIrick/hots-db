@@ -1,7 +1,7 @@
 const fs = require('fs')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
-const { mean, orderBy, map } = require('lodash')
+const { mean, orderBy, take } = require('lodash')
 const { combinations } = require('combinatorial-generators')
 const xl = require('excel4node')
 const chroma = require('chroma-js')
@@ -95,6 +95,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
   const teamData = await getTeamByName(teamsContainer, teamName)
 
   const picks = []
+  const opponentPicks = []
   const bans = []
   const duos = []
   const trios = []
@@ -135,21 +136,30 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
           map.picks++
         }
 
-        const picksThisGame = []
-
         for (const player of team.players) {
           if (!teamData.players.includes(`${player.name}#${player.tag}`)) {
             // This player is not on the active roster, skip them.
             continue
           }
 
-          picksThisGame.push(player.hero)
-
           let hero = picks.find(h => h.hero === player.hero)
 
           if (!hero) {
             hero = { hero: player.hero, count: 0, rounds: [], isWin: [] }
             picks.push(hero)
+          }
+
+          hero.count++
+          hero.rounds.push(player.round)
+          hero.isWin.push(game.isWin ? 1 : 0)
+        }
+
+        for (const player of otherTeam.players) {
+          let hero = opponentPicks.find(h => h.hero === player.hero)
+
+          if (!hero) {
+            hero = { hero: player.hero, count: 0, rounds: [], isWin: [] }
+            opponentPicks.push(hero)
           }
 
           hero.count++
@@ -193,6 +203,17 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
 
   for (const pick of picks) {
     pick.winRate = mean(pick.isWin)
+    pick.count = pick.isWin.length
+    pick.wins = pick.isWin.filter(isWin => isWin).length
+    pick.losses = pick.isWin.filter(isWin => !isWin).length
+    pick.averagePickRound = mean(pick.rounds)
+  }
+
+  for (const pick of opponentPicks) {
+    pick.winRate = mean(pick.isWin)
+    pick.count = pick.isWin.length
+    pick.wins = pick.isWin.filter(isWin => isWin).length
+    pick.losses = pick.isWin.filter(isWin => !isWin).length
     pick.averagePickRound = mean(pick.rounds)
   }
 
@@ -212,6 +233,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
     name: teamName,
     maps,
     picks,
+    opponentPicks,
     bans,
     opponentBans,
     combos: duos.concat(trios).concat(quartets).concat(quintets)
@@ -220,9 +242,26 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
 
 const getFill = (color) => ({ type: 'pattern', patternType: 'solid', fgColor: color })
 const winRateScale = chroma.scale(['white', chroma('green')])
+const lossRateScale = chroma.scale(['white', chroma('red')])
 
 const getWinRateStyle = (winRate) => {
-  return { fill: { type: 'pattern', patternType: 'solid', fgColor: winRateScale(winRate).hex() } }
+  // If there's no color, don't set a style at all.  This prevents the border from disappearing,
+  // so it doesn't look weird.
+  if (winRate !== 0) {
+    return { fill: { type: 'pattern', patternType: 'solid', fgColor: winRateScale(winRate).hex() } }
+  } else {
+    return {}
+  }
+}
+
+const getLossRateStyle = (winRate) => {
+  // If there's no color, don't set a style at all.  This prevents the border from disappearing,
+  // so it doesn't look weird.
+  if (winRate !== 0) {
+    return { fill: { type: 'pattern', patternType: 'solid', fgColor: lossRateScale(winRate).hex() } }
+  } else {
+    return {}
+  }
 }
 
 const fillMapSheet = (ws, ourMaps, theirMaps) => {
@@ -294,10 +333,139 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
 }
 
+const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
+  ws.cell(1, 1, 1, 7, true)
+    .string('For and Against')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+
+  const heroCount = 15
+  const firstUsRow = 4
+  const firstThemRow = firstUsRow + heroCount + 2
+  const minGames = 3
+
+  ws.cell(firstUsRow - 1, 1, firstUsRow - 1, 3, true)
+    .string('For Us - Wins')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(firstUsRow - 1, 5, firstUsRow - 1, 7, true)
+    .string('Against Us')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(firstThemRow - 1, 1, firstThemRow - 1, 3, true)
+    .string('For Them')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(firstThemRow - 1, 5, firstThemRow - 1, 7, true)
+    .string('Against Them')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+
+  const ourPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const ourOpponentPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+
+  let currentRow = firstUsRow
+
+  for (const pick of ourPicks) {
+    ws.cell(currentRow, 1).string(pick.hero)
+    ws.cell(currentRow, 2).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 3).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(pick.winRate))
+    currentRow++
+  }
+
+  currentRow = firstUsRow
+
+  for (const pick of ourOpponentPicks) {
+    ws.cell(currentRow, 5).string(pick.hero)
+    ws.cell(currentRow, 6).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 7).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    currentRow++
+  }
+
+  const theirPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const theirOpponentPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+
+  currentRow = firstThemRow
+
+  for (const pick of theirPicks) {
+    ws.cell(currentRow, 1).string(pick.hero)
+    ws.cell(currentRow, 2).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 3).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(pick.winRate))
+    currentRow++
+  }
+
+  currentRow = firstThemRow
+
+  for (const pick of theirOpponentPicks) {
+    ws.cell(currentRow, 5).string(pick.hero)
+    ws.cell(currentRow, 6).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 7).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    currentRow++
+  }
+}
+
+const fillPicksSheet = (ws, picks) => {
+  ws.cell(1, 1, 1, 4, true)
+    .string('Draft Picks')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+
+  ws.cell(3, 1).string('Hero').style({ font: { bold: true } })
+  ws.cell(3, 2).string('Count').style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+  ws.cell(3, 3).string('Win Rate').style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+  ws.cell(3, 4).string('Avg Pick Round').style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+
+  const firstRow = 4
+  let currentRow = firstRow
+
+  for (const pick of picks) {
+    ws.cell(currentRow, 1).string(pick.hero)
+    ws.cell(currentRow, 2).number(pick.count).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 3).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(pick.winRate))
+    ws.cell(currentRow, 4).number(pick.averagePickRound).style({ alignment: { horizontal: 'center' }, numberFormat: '0.00' })
+    currentRow++
+  }
+
+  ws.column(1).width = 15
+  ws.column(2).width = 15
+  ws.column(3).width = 15
+  ws.column(4).width = 19
+  ws.row(3).filter()
+}
+
+const fillBansSheet = (ws, title, bans) => {
+  ws.cell(1, 1, 1, 3, true)
+    .string(title)
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+
+  ws.cell(3, 1).string('Hero').style({ font: { bold: true } })
+  ws.cell(3, 2).string('Count').style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+  ws.cell(3, 3).string('Avg Ban Round').style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+
+  const firstRow = 4
+  let currentRow = firstRow
+
+  for (const ban of bans) {
+    ws.cell(currentRow, 1).string(ban.hero)
+    ws.cell(currentRow, 2).number(ban.count).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 3).number(ban.averageBanRound).style({ alignment: { horizontal: 'center' }, numberFormat: '0.00' })
+    currentRow++
+  }
+
+  ws.column(1).width = 15
+  ws.column(2).width = 15
+  ws.column(3).width = 18
+  ws.row(3).filter()
+}
+
 const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const wb = new xl.Workbook()
   const mapSheet = wb.addWorksheet('Maps')
+  const forAndAgainstSheet = wb.addWorksheet('For And Against')
+  const picksSheet = wb.addWorksheet('Draft Picks')
+  const bansSheet = wb.addWorksheet('Bans')
+  const bansAgainstSheet = wb.addWorksheet('Bans Against')
+
   fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
+  fillForAndAgainstSheet(forAndAgainstSheet, ourTeamData, theirTeamData)
+  fillPicksSheet(picksSheet, orderBy(theirTeamData.picks, p => 0 - p.count))
+  fillBansSheet(bansSheet, 'Bans', orderBy(theirTeamData.bans, b => 0 - b.count))
+  fillBansSheet(bansAgainstSheet, 'Opponent Bans', orderBy(theirTeamData.opponentBans, b => 0 - b.count))
+
   return await wb.writeToBuffer()
 }
 
