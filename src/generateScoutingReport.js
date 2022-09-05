@@ -27,7 +27,19 @@ const {
 
 const colors = {
   topHeader: '#FCE4D6',
-  subHeader: '#D9E1F2'
+  subHeader: '#D9E1F2',
+  wonGame: '#D9EAD3',
+  lostGame: '#F4CCCC',
+  pickedMap: '#CFE2F3',
+  ban: '#EAD1DC',
+  pick: '#FCE5CD',
+  opponentBan: '#D0E0E3',
+  healer: '#D9EAD3',
+  rangedAssassin: '#F4CCCC',
+  meleeAssassin: '',
+  tank: '#FFF2CC',
+  bruiser: '#CFE2F3',
+  support: '#111111'
 }
 
 const getTeamByName = async (container, teamName) => {
@@ -104,9 +116,12 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
   const quintets = []
   const maps = []
   const opponentBans = []
+  const currentSeasonMatches = []
 
   for (const season of teamData.seasons.filter(s => s.season >= startSeason && s.season <= endSeason)) {
     for (const match of season.matches) {
+      const gamesForMatch = []
+
       for (const game of match.games) {
         const importPath = getSqlImportPath(season.season, game)
         let json
@@ -136,6 +151,14 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
         if (team.teamNumber !== json.firstPickTeam) {
           map.picks++
         }
+
+        gamesForMatch.push({
+          map: game.map,
+          pickedMap: team.teamNumber !== json.firstPickTeam,
+          isWin: game.isWin,
+          team,
+          otherTeam
+        })
 
         for (const player of team.players) {
           if (!teamData.players.includes(`${player.name}#${player.tag}`)) {
@@ -199,6 +222,14 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
         addCombos(quartets, heroNames, 4, game.isWin)
         addCombos(quintets, heroNames, 5, game.isWin)
       }
+
+      if (season.season === currentSeason) {
+        currentSeasonMatches.push({
+          date: match.date,
+          opponent: match.opponent.name,
+          games: gamesForMatch
+        })
+      }
     }
   }
 
@@ -232,6 +263,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
 
   return {
     name: teamName,
+    currentSeasonMatches,
     maps,
     picks,
     opponentPicks,
@@ -508,6 +540,112 @@ const fillBansSheet = (ws, title, bans) => {
   ws.row(3).filter()
 }
 
+const fillMatchHistorySheet = (ws, matches) => {
+  const players = []
+
+  for (const match of matches) {
+    for (const game of match.games) {
+      for (const player of game.team.players) {
+        let foundPlayer = players.find(p => p.name === player.name)
+
+        if (!foundPlayer) {
+          foundPlayer = { name: player.name, count: 0 }
+          players.push(foundPlayer)
+        }
+
+        foundPlayer.count++
+      }
+    }
+  }
+
+  const sortedPlayers = orderBy(players, ['count', 'name'], ['desc', 'asc'])
+  const playerCount = sortedPlayers.length
+
+  ws.cell(1, 1, 1, 18 + sortedPlayers.length, true).string('Match History').style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+  ws.cell(3, 3).string('Blue = Map Pick')
+
+  for (let playerIndex = 0; playerIndex < sortedPlayers.length; playerIndex++) {
+    ws.cell(3, 5 + playerIndex).string(sortedPlayers[playerIndex].name).style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+  }
+
+  ws.cell(3, 6 + playerCount, 3, 8 + playerCount, true).string('Bans').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.ban) })
+  ws.cell(3, 10 + playerCount, 3, 14 + playerCount, true).string('Picks In Order').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.pick) })
+  ws.cell(3, 16 + playerCount, 3, 18 + playerCount, true).string('Bans Against').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
+
+  let currentRow = 5
+
+  for (const match of matches) {
+    ws.cell(currentRow, 1).string(match.opponent)
+    ws.cell(currentRow, 2).string(match.date).style({ alignment: { horizontal: 'center' } })
+
+    for (const game of match.games) {
+      ws.cell(currentRow, 3).string(game.map)
+
+      if (game.pickedMap) {
+        ws.cell(currentRow, 3).style({ fill: getFill(colors.pickedMap) })
+      }
+
+      for (let playerIndex = 0; playerIndex < sortedPlayers.length; playerIndex++) {
+        const player = sortedPlayers[playerIndex]
+        const foundPlayer = game.team.players.find(p => p.name === player.name)
+
+        if (foundPlayer) {
+          ws.cell(currentRow, 5 + playerIndex).string(foundPlayer.hero).style({ alignment: { horizontal: 'center' } })
+        }
+
+        ws.cell(currentRow, 5 + playerIndex)
+          .style({ fill: getFill(game.isWin ? colors.wonGame : colors.lostGame) })
+      }
+
+      for (let banIndex = 0; banIndex < game.team.bans.length; banIndex++) {
+        ws.cell(currentRow, 6 + playerCount + banIndex)
+          .string(game.team.bans[banIndex].hero)
+          .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.ban) })
+      }
+
+      for (let pickIndex = 0; pickIndex < game.team.players.length; pickIndex++) {
+        ws.cell(currentRow, 10 + playerCount + pickIndex)
+          .string(game.team.players[pickIndex].hero)
+          .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.pick) })
+      }
+
+      for (let banAgainstIndex = 0; banAgainstIndex < game.otherTeam.bans.length; banAgainstIndex++) {
+        ws.cell(currentRow, 16 + playerCount + banAgainstIndex)
+          .string(game.otherTeam.bans[banAgainstIndex].hero)
+          .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
+      }
+
+      currentRow++
+    }
+
+    currentRow++
+  }
+
+  ws.column(1).width = 18
+  ws.column(2).width = 12
+  ws.column(3).width = 20
+  ws.column(4).width = 2
+  ws.column(5 + playerCount).width = 2
+  ws.column(9 + playerCount).width = 2
+  ws.column(15 + playerCount).width = 2
+
+  for (let playerCol = 5; playerCol <= 5; playerCol++) {
+    ws.column(playerCol).width = 13
+  }
+
+  for (let banCol = 6 + playerCount; banCol <= 8 + playerCount; banCol++) {
+    ws.column(banCol).width = 13
+  }
+
+  for (let pickCol = 10 + playerCount; pickCol <= 14 + playerCount; pickCol++) {
+    ws.column(pickCol).width = 13
+  }
+
+  for (let opponentBanCol = 16 + playerCount; opponentBanCol <= 18 + playerCount; opponentBanCol++) {
+    ws.column(opponentBanCol).width = 13
+  }
+}
+
 const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const wb = new xl.Workbook()
   const mapSheet = wb.addWorksheet('Maps')
@@ -515,12 +653,14 @@ const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const picksSheet = wb.addWorksheet('Draft Picks')
   const bansSheet = wb.addWorksheet('Bans')
   const bansAgainstSheet = wb.addWorksheet('Bans Against')
+  const matchHistorySheet = wb.addWorksheet('Match History')
 
   fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
   fillForAndAgainstSheet(forAndAgainstSheet, ourTeamData, theirTeamData)
   fillPicksSheet(picksSheet, orderBy(theirTeamData.picks, p => 0 - p.count))
   fillBansSheet(bansSheet, 'Bans', orderBy(theirTeamData.bans, b => 0 - b.count))
   fillBansSheet(bansAgainstSheet, 'Opponent Bans', orderBy(theirTeamData.opponentBans, b => 0 - b.count))
+  fillMatchHistorySheet(matchHistorySheet, orderBy(theirTeamData.currentSeasonMatches, ['date'], ['desc']))
 
   return await wb.writeToBuffer()
 }
