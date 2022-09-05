@@ -2,10 +2,11 @@ const fs = require('fs')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { mean, orderBy, take } = require('lodash')
-const { combinations } = require('combinatorial-generators')
+const moment = require('moment')
 const xl = require('excel4node')
 const chroma = require('chroma-js')
 const getCosmos = require('./db/getCosmos')
+const getHeroWinRatesData = require('./lib/getHeroWinRatesData')
 const getCompressedJson = require('./lib/getCompressedJson')
 const changeExtension = require('./lib/changeExtension')
 const {
@@ -36,10 +37,10 @@ const colors = {
   opponentBan: '#D0E0E3',
   healer: '#D9EAD3',
   rangedAssassin: '#F4CCCC',
-  meleeAssassin: '',
+  meleeAssassin: '#EC9337',
   tank: '#FFF2CC',
   bruiser: '#CFE2F3',
-  support: '#111111'
+  support: '#DDDDDD'
 }
 
 const getTeamByName = async (container, teamName) => {
@@ -88,32 +89,12 @@ const getSqlImportPath = (season, game) => {
   return `processed/ngs/season-${season}/${changeExtension(game.replayKey, 'import.json.gz')}`
 }
 
-const addCombos = (combos, picks, size, isWin) => {
-  for (const possibleCombo of combinations(picks, size)) {
-    const heroList = orderBy(possibleCombo).join(' + ')
-
-    let combo = combos.find(h => h.heroList === heroList)
-
-    if (!combo) {
-      combo = { heroList, count: 0, isWin: [] }
-      combos.push(combo)
-    }
-
-    combo.count++
-    combo.isWin.push(isWin ? 1 : 0)
-  }
-}
-
 const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startSeason, endSeason, log) => {
   const teamData = await getTeamByName(teamsContainer, teamName)
 
   const picks = []
   const opponentPicks = []
   const bans = []
-  const duos = []
-  const trios = []
-  const quartets = []
-  const quintets = []
   const maps = []
   const opponentBans = []
   const currentSeasonMatches = []
@@ -214,13 +195,6 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
           bannedHero.count++
           bannedHero.rounds.push(ban.round)
         }
-
-        const heroNames = team.players.map(p => p.hero)
-
-        addCombos(duos, heroNames, 2, game.isWin)
-        addCombos(trios, heroNames, 3, game.isWin)
-        addCombos(quartets, heroNames, 4, game.isWin)
-        addCombos(quintets, heroNames, 5, game.isWin)
       }
 
       if (season.season === currentSeason) {
@@ -257,10 +231,6 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
     ban.averageBanRound = mean(ban.rounds)
   }
 
-  for (const combo of duos.concat(trios).concat(quartets).concat(quintets)) {
-    combo.winRate = mean(combo.isWin)
-  }
-
   return {
     name: teamName,
     currentSeasonMatches,
@@ -268,14 +238,13 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
     picks,
     opponentPicks,
     bans,
-    opponentBans,
-    combos: duos.concat(trios).concat(quartets).concat(quintets)
+    opponentBans
   }
 }
 
 const getFill = (color) => ({ type: 'pattern', patternType: 'solid', fgColor: color })
 const winRateScale = chroma.scale(['white', chroma('green')])
-const lossRateScale = chroma.scale(['white', chroma('red')])
+const lossRateScale = chroma.scale(['white', chroma('red').brighten()])
 
 const getWinRateStyle = (winRate) => {
   // If there's no color, don't set a style at all.  This prevents the border from disappearing,
@@ -294,6 +263,25 @@ const getLossRateStyle = (winRate) => {
     return { fill: { type: 'pattern', patternType: 'solid', fgColor: lossRateScale(winRate).hex() } }
   } else {
     return {}
+  }
+}
+
+const getRoleColor = (role) => {
+  switch (role) {
+    case 'Healer':
+      return colors.healer
+    case 'Ranged Assassin':
+      return colors.rangedAssassin
+    case 'Melee Assassin':
+      return colors.meleeAssassin
+    case 'Tank':
+      return colors.tank
+    case 'Bruiser':
+      return colors.bruiser
+    case 'Support':
+      return colors.support
+    default:
+      return undefined
   }
 }
 
@@ -366,12 +354,43 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
 }
 
+const fillHeroesSheet = async (ws, heroData, title) => {
+  ws.cell(1, 1, 1, 7, true).string(title).style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+  ws.cell(3, 1).string('Role').style({ font: { bold: true } })
+  ws.cell(3, 2).string('Hero').style({ font: { bold: true } })
+  ws.cell(3, 3).string('Player').style({ font: { bold: true } })
+  ws.cell(3, 4).string('Source').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
+  ws.cell(3, 5).string('Games').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
+  ws.cell(3, 6).string('Win %').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
+  ws.cell(3, 7).string('KDA').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
+  ws.row(3).filter()
+
+  let currentRow = 4
+
+  for (const row of heroData) {
+    const x = getRoleColor(row.role)
+    ws.cell(currentRow, 1).string(row.role).style({ fill: getFill(getRoleColor(row.role)) })
+    ws.cell(currentRow, 2).string(row.hero)
+    ws.cell(currentRow, 3).string(row.player)
+    ws.cell(currentRow, 4).string(row.source).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 5).number(row.games).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 6).number(row.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(row.winRate))
+    ws.cell(currentRow, 7).number(row.kda).style({ alignment: { horizontal: 'center' }, numberFormat: '0.0' })
+
+    currentRow++
+  }
+
+  ws.column(1).width = 16
+  ws.column(2).width = 15
+  ws.column(3).width = 20
+}
+
 const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
   ws.cell(1, 1, 1, 15, true)
     .string('For and Against')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
 
-  const heroCount = 10
+  const heroCount = 15
   const firstUsRow = 4
   const firstThemRow = firstUsRow + heroCount + 2
   const minGames = 2
@@ -649,13 +668,21 @@ const fillMatchHistorySheet = (ws, matches) => {
 const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const wb = new xl.Workbook()
   const mapSheet = wb.addWorksheet('Maps')
+  const heroesThisSeasonSheet = wb.addWorksheet('Hero Win Rates - This Season')
+  const heroesAllTimeSheet = wb.addWorksheet('Hero Win Rates - All Time')
   const forAndAgainstSheet = wb.addWorksheet('For And Against')
   const picksSheet = wb.addWorksheet('Draft Picks')
   const bansSheet = wb.addWorksheet('Bans')
   const bansAgainstSheet = wb.addWorksheet('Bans Against')
   const matchHistorySheet = wb.addWorksheet('Match History')
+  wb.addWorksheet('Notes')
+
+  const heroesThisSeason = await getHeroWinRatesData(theirTeamData.name, currentSeason, currentSeason, false)
+  const heroesAllTime = await getHeroWinRatesData(theirTeamData.name, 1, currentSeason, true)
 
   fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
+  await fillHeroesSheet(heroesThisSeasonSheet, heroesThisSeason, 'Hero Win Rates - This Season')
+  await fillHeroesSheet(heroesAllTimeSheet, heroesAllTime, 'Hero Win Rates - All Time')
   fillForAndAgainstSheet(forAndAgainstSheet, ourTeamData, theirTeamData)
   fillPicksSheet(picksSheet, orderBy(theirTeamData.picks, p => 0 - p.count))
   fillBansSheet(bansSheet, 'Bans', orderBy(theirTeamData.bans, b => 0 - b.count))
@@ -674,5 +701,5 @@ module.exports = async (ourTeam, theirTeam, startSeason, log) => {
   const theirTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, theirTeam, startSeason, currentSeason, log)
 
   const xlsx = await generateWorkbook(ourTeamData, theirTeamData)
-  fs.writeFileSync(`${ourTeam.replace(/[^a-zA-Z0-9]/g, '')}-vs-${theirTeam.replace(/[^a-zA-Z0-9]/g, '')}.xlsx`, xlsx)
+  fs.writeFileSync(`${ourTeam.replace(/[^a-zA-Z0-9]/g, '')}-vs-${theirTeam.replace(/[^a-zA-Z0-9]/g, '')}-${moment().format('YYYY-MM-DD')}.xlsx`, xlsx)
 }

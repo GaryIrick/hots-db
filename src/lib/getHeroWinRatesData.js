@@ -1,0 +1,119 @@
+const getSqlServer = require('../db/getSqlServer')
+
+const sql = `
+  DECLARE @teamId uniqueidentifier;
+
+  SELECT @teamId = TeamId FROM Team WHERE Name = @teamName;
+
+  DECLARE @sources as TABLE(source nvarchar(4))
+  INSERT INTO @sources
+  VALUES
+    __sources__
+
+  DECLARE @seasons AS TABLE(Season int)
+  INSERT INTO @seasons
+  VALUES
+    __seasons__
+  ;
+
+  WITH players AS
+  (
+    SELECT
+      tp.PlayerId,
+      p.Name
+    FROM
+      TeamPlayer tp
+      JOIN Player p
+        ON p.PlayerId = tp.PlayerId
+    WHERE
+      tp.TeamId = @teamId
+  ),
+  heroes AS
+  (
+    SELECT
+      h.Role,
+      h.Name AS Hero,
+      p.Name AS Player,
+      g.Source,
+      0.0 + bs.Kills + bs.Assists AS Takedowns,
+      0.0 + bs.Deaths AS Deaths,
+      bs.IsWinner * 1.0 AS IsWinner
+    FROM
+      players p
+      JOIN BoxScoreEx bs
+        ON bs.PlayerId = p.PlayerId
+      JOIN Game g
+        ON g.GameId = bs.GameId
+      JOIN Hero h
+        ON h.HeroId = bs.HeroId
+      LEFT JOIN MatchGame mg
+        ON mg.GameId = g.GameId
+      LEFT JOIN Match m
+        ON m.MatchId = mg.MatchId
+    WHERE
+      g.Source IN (SELECT source FROM @sources)
+      AND
+      (
+        m.Season IS NULL
+        OR m.Season IN (SELECT Season FROM @seasons)
+      )
+  ),
+  stats AS
+  (
+    SELECT
+      Role,
+      Hero,
+      Player,
+      UPPER(Source) AS Source,
+      COUNT(*) AS Games,
+      AVG(IsWinner) AS WinPercent,
+      CASE WHEN SUM(Deaths) = 0 THEN SUM(Takedowns) ELSE SUM(Takedowns) / SUM(Deaths) END AS KDA
+    FROM
+      heroes
+    GROUP BY
+      Player,
+      Source,
+      Role,
+      Hero
+  )
+  SELECT
+    *
+  FROM
+    stats
+  ORDER BY
+    Role,
+    WinPercent DESC,
+    Hero,
+    Games DESC
+`
+
+module.exports = async (teamName, firstSeason, lastSeason, includeHeroesProfile) => {
+  const seasons = []
+
+  for (let season = firstSeason; season <= lastSeason; season++) {
+    seasons.push(season)
+  }
+
+  const sqlToRun = sql
+    .replace('__seasons__', seasons.map(s => `(${s})`).join(','))
+    .replace('__sources__', includeHeroesProfile ? '(\'hp\'), (\'ngs\')' : '(\'ngs\')')
+
+  const db = await getSqlServer()
+
+  const response = await db
+    .request()
+    .input('teamName', teamName)
+    .query(sqlToRun)
+
+  await db.close()
+
+  return response.recordset.map(row => ({
+    role: row.Role,
+    hero: row.Hero,
+    player: row.Player,
+    source: row.Source,
+    games: row.Games,
+    winRate: row.WinPercent,
+    kda: row.KDA
+  }))
+}
