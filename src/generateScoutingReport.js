@@ -20,7 +20,8 @@ const {
     }
   },
   ngs: {
-    currentMapPool
+    currentMapPool,
+    currentSeason
   }
 } = require('./config')
 
@@ -152,6 +153,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
           hero.count++
           hero.rounds.push(player.round)
           hero.isWin.push(game.isWin ? 1 : 0)
+          console.log(`${teamName},${hero.hero},${game.isWin ? 'WIN' : 'LOSS'}`)
         }
 
         for (const player of otherTeam.players) {
@@ -304,7 +306,7 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
   ws.cell(firstMapRow, 3, lastMapRow, 3).style({ numberFormat: '#%; -#%; 0%' })
   ws.cell(firstMapRow, 7, lastMapRow, 7).style({ numberFormat: '#%; -#%; 0%' })
 
-  ws.cell(1, 2, 1, 8, true)
+  ws.cell(1, 1, 1, 8, true)
     .string('Maps')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
   ws.cell(3, 2, 3, 4, true)
@@ -334,34 +336,51 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
 }
 
 const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
-  ws.cell(1, 1, 1, 7, true)
+  ws.cell(1, 1, 1, 15, true)
     .string('For and Against')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
 
-  const heroCount = 15
+  const heroCount = 10
   const firstUsRow = 4
   const firstThemRow = firstUsRow + heroCount + 2
-  const minGames = 3
+  const minGames = 2
 
   ws.cell(firstUsRow - 1, 1, firstUsRow - 1, 3, true)
-    .string('For Us - Wins')
+    .string('For Us - Good')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
   ws.cell(firstUsRow - 1, 5, firstUsRow - 1, 7, true)
-    .string('Against Us')
-    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(firstThemRow - 1, 1, firstThemRow - 1, 3, true)
-    .string('For Them')
-    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(firstThemRow - 1, 5, firstThemRow - 1, 7, true)
-    .string('Against Them')
+    .string('For Us - Bad')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
-  const ourPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
-  const ourOpponentPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  ws.cell(firstUsRow - 1, 9, firstUsRow - 1, 11, true)
+    .string('Against Us - Good')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(firstUsRow - 1, 13, firstUsRow - 1, 15, true)
+    .string('Against Us - Bad')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+
+  ws.cell(firstThemRow - 1, 1, firstThemRow - 1, 3, true)
+    .string('For Them - Good')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(firstThemRow - 1, 5, firstThemRow - 1, 7, true)
+    .string('For Them - Bad')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+
+  ws.cell(firstThemRow - 1, 9, firstThemRow - 1, 11, true)
+    .string('Against Them - Good')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+  ws.cell(firstThemRow - 1, 13, firstThemRow - 1, 15, true)
+    .string('Against Them - Bad')
+    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
+
+  const ourGoodPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const ourBadPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const ourOpponentGoodPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const ourOpponentBadPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
 
   let currentRow = firstUsRow
 
-  for (const pick of ourPicks) {
+  for (const pick of ourGoodPicks) {
     ws.cell(currentRow, 1).string(pick.hero)
     ws.cell(currentRow, 2).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
     ws.cell(currentRow, 3).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(pick.winRate))
@@ -370,19 +389,39 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
 
   currentRow = firstUsRow
 
-  for (const pick of ourOpponentPicks) {
+  for (const pick of ourBadPicks) {
     ws.cell(currentRow, 5).string(pick.hero)
     ws.cell(currentRow, 6).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
-    ws.cell(currentRow, 7).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    ws.cell(currentRow, 7).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(1 - pick.winRate))
     currentRow++
   }
 
-  const theirPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
-  const theirOpponentPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  currentRow = firstUsRow
+
+  for (const pick of ourOpponentGoodPicks) {
+    ws.cell(currentRow, 9).string(pick.hero)
+    ws.cell(currentRow, 10).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 11).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(1 - pick.winRate))
+    currentRow++
+  }
+
+  currentRow = firstUsRow
+
+  for (const pick of ourOpponentBadPicks) {
+    ws.cell(currentRow, 13).string(pick.hero)
+    ws.cell(currentRow, 14).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 15).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    currentRow++
+  }
+
+  const theirGoodPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
+  const theirBadPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const theirOpponentGoodPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const theirOpponentBadPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
 
   currentRow = firstThemRow
 
-  for (const pick of theirPicks) {
+  for (const pick of theirGoodPicks) {
     ws.cell(currentRow, 1).string(pick.hero)
     ws.cell(currentRow, 2).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
     ws.cell(currentRow, 3).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(pick.winRate))
@@ -391,10 +430,28 @@ const fillForAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
 
   currentRow = firstThemRow
 
-  for (const pick of theirOpponentPicks) {
+  for (const pick of theirBadPicks) {
     ws.cell(currentRow, 5).string(pick.hero)
     ws.cell(currentRow, 6).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
-    ws.cell(currentRow, 7).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
+    ws.cell(currentRow, 7).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(1 - pick.winRate))
+    currentRow++
+  }
+
+  currentRow = firstThemRow
+
+  for (const pick of theirOpponentGoodPicks) {
+    ws.cell(currentRow, 9).string(pick.hero)
+    ws.cell(currentRow, 10).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 11).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(1 - pick.winRate))
+    currentRow++
+  }
+
+  currentRow = firstThemRow
+
+  for (const pick of theirOpponentBadPicks) {
+    ws.cell(currentRow, 13).string(pick.hero)
+    ws.cell(currentRow, 14).string(`${pick.wins} - ${pick.losses}`).style({ alignment: { horizontal: 'center' } })
+    ws.cell(currentRow, 15).number(pick.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getLossRateStyle(pick.winRate))
     currentRow++
   }
 }
@@ -469,13 +526,13 @@ const generateWorkbook = async (ourTeamData, theirTeamData) => {
   return await wb.writeToBuffer()
 }
 
-module.exports = async (ourTeam, theirTeam, startSeason, endSeason, log) => {
+module.exports = async (ourTeam, theirTeam, startSeason, log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const sqlImportFilesystem = datalake.getFileSystemClient(sqlImportContainerName)
   const teamsContainer = await getCosmos(teamsContainerName, true)
 
-  const ourTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, ourTeam, startSeason, endSeason, log)
-  const theirTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, theirTeam, startSeason, endSeason, log)
+  const ourTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, ourTeam, startSeason, currentSeason, log)
+  const theirTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, theirTeam, startSeason, currentSeason, log)
 
   const xlsx = await generateWorkbook(ourTeamData, theirTeamData)
   fs.writeFileSync(`${ourTeam.replace(/ /g, '')}-vs-${theirTeam.replace(/ /g, '')}.xlsx`, xlsx)
