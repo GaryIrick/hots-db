@@ -113,7 +113,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
         try {
           json = await getCompressedJson(sqlImportFilesystem, importPath)
         } catch (e) {
-          log(`MISSING GAME for ${teamName}: ${importPath}`)
+          log(`MISSING GAME for ${teamName}: ${importPath} from ${match.id}`)
           // This game is missing, just ignore it.
           continue
         }
@@ -153,7 +153,6 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
           hero.count++
           hero.rounds.push(player.round)
           hero.isWin.push(game.isWin ? 1 : 0)
-          console.log(`${teamName},${hero.hero},${game.isWin ? 'WIN' : 'LOSS'}`)
         }
 
         for (const player of otherTeam.players) {
