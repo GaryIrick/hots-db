@@ -674,5 +674,5 @@ module.exports = async (ourTeam, theirTeam, startSeason, log) => {
   const theirTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, theirTeam, startSeason, currentSeason, log)
 
   const xlsx = await generateWorkbook(ourTeamData, theirTeamData)
-  fs.writeFileSync(`${ourTeam.replace(/ /g, '')}-vs-${theirTeam.replace(/ /g, '')}.xlsx`, xlsx)
+  fs.writeFileSync(`${ourTeam.replace(/[^a-zA-Z0-9]/g, '')}-vs-${theirTeam.replace(/[^a-zA-Z0-9]/g, '')}.xlsx`, xlsx)
 }
