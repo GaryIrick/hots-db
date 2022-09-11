@@ -8,7 +8,7 @@ const generateImports = require('../src/generateImports')
 const importReplaysIntoSql = require('../src/importReplaysIntoSql')
 const importNgsTeamsIntoSql = require('../src/importNgsTeamsIntosql')
 const importNgsMatchesIntoSql = require('../src/importNgsMatchesIntoSql')
-const prunePendingDirectories = require('../src/prunePendingDirectories')
+const prune = require('../src/prune')
 const { ngs: { currentSeason } } = require('../src/config')
 
 const callUntilZero = async (name, fn, log) => {
@@ -59,7 +59,8 @@ const run = async () => {
   await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
   await callUntilZero('importing NGS teams into SQL', () => importNgsTeamsIntoSql(100, () => {}), log)
   await callUntilZero('importing NGS matches into SQL', () => importNgsMatchesIntoSql(100, () => {}), log)
-  await callOnce('Pruning pending directories', () => prunePendingDirectories(() => {}), log)
+  // Get rid of old replay files and empty directories in the "pending" folder of each storage container.
+  await callOnce('Pruning old replays and pending directories', () => prune(() => {}), log)
 }
 
 run().then(() => log('Done.'))

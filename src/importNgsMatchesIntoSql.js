@@ -14,7 +14,7 @@ const {
 } = require('./config')
 
 const getGameFingerprint = async (parsedFilesystem, season, replayKey) => {
-  const processedPath = `processed/ngs/season-${season}/${changeExtension(replayKey, 'parse.json.gz')}`
+  const processedPath = `processed/ngs/season-${`${season}`.padStart(2, 0)}/${changeExtension(replayKey, 'parse.json.gz')}`
 
   try {
     const parse = await getCompressedJson(parsedFilesystem, processedPath)

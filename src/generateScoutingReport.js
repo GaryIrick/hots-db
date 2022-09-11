@@ -86,7 +86,7 @@ const pickTeam = (json, isWin) => {
 }
 
 const getSqlImportPath = (season, game) => {
-  return `processed/ngs/season-${season}/${changeExtension(game.replayKey, 'import.json.gz')}`
+  return `processed/ngs/season-${`${season}`.padStart(2, 0)}/${changeExtension(game.replayKey, 'import.json.gz')}`
 }
 
 const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startSeason, endSeason, log) => {

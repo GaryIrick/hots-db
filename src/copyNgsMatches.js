@@ -75,7 +75,7 @@ const copyFileFromS3ToAzure = async (bucket, key, blobClient, log) => {
 }
 
 const copyReplay = async (season, key, log) => {
-  const path = `pending/ngs/season-${season}/${key}`
+  const path = `pending/ngs/season-${`${season}`.padStart(2, 0)}/${key}`
   const blobClient = await getBlobClient(path)
 
   if (!await doesFileExistInAzure(blobClient)) {

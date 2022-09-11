@@ -166,8 +166,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch prune pending directories",
-            "program": "${workspaceFolder}/commands/prunePendingDirectories.js",
+            "name": "Launch prune",
+            "program": "${workspaceFolder}/commands/prune.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],

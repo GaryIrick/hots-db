@@ -8,7 +8,7 @@ const generateImports = require('../src/generateImports')
 const importReplaysIntoSql = require('../src/importReplaysIntoSql')
 const importNgsTeamsIntoSql = require('../src/importNgsTeamsIntosql')
 const importNgsMatchesIntoSql = require('../src/importNgsMatchesIntoSql')
-const prunePendingDirectories = require('../src/prunePendingDirectories')
+const prune = require('../src/prune')
 const { azure: { resourceGroup, functionAppUrl, functionAppName }, ngs: { currentSeason } } = require('../src/config')
 
 const getHostKey = async () => {
@@ -89,8 +89,8 @@ const run = async () => {
   await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
   await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
 
-  // Get rid of empty directories in the "pending" folder of each storage container.
-  await callOnce('Pruning pending directories', () => prunePendingDirectories(() => {}), log)
+  // Get rid of old replay files and empty directories in the "pending" folder of each storage container.
+  await callOnce('Pruning old replays and pending directories', () => prune(() => {}), log)
 }
 
 run().then(() => log('Done.'))
