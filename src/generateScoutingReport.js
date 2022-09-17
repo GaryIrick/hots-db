@@ -103,6 +103,17 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
     for (const match of season.matches) {
       const gamesForMatch = []
 
+      for (const mapBan of match.mapBans) {
+        let map = maps.find(m => m.name === mapBan)
+
+        if (!map) {
+          map = { name: mapBan, wins: 0, losses: 0, picks: 0, bans: 0 }
+          maps.push(map)
+        }
+
+        map.bans++
+      }
+
       for (const game of match.games) {
         const importPath = getSqlImportPath(season.season, game)
         let json
@@ -119,7 +130,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
         let map = maps.find(m => m.name === game.map)
 
         if (!map) {
-          map = { name: game.map, wins: 0, losses: 0, picks: 0 }
+          map = { name: game.map, wins: 0, losses: 0, picks: 0, bans: 0 }
           maps.push(map)
         }
 
@@ -296,22 +307,34 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
     const theirMap = theirMaps.find(m => m.name === mapName)
 
     if (ourMap) {
-      const winRate = ourMap.wins / (ourMap.wins + ourMap.losses)
-      ws.cell(mapRow, 2).string(`${ourMap.wins} - ${ourMap.losses}`)
-      ws.cell(mapRow, 3).number(winRate).style(getWinRateStyle(winRate))
+      if (ourMap.wins + ourMap.losses > 0) {
+        const winRate = ourMap.wins / (ourMap.wins + ourMap.losses)
+        ws.cell(mapRow, 2).string(`${ourMap.wins} - ${ourMap.losses}`)
+        ws.cell(mapRow, 3).number(winRate).style(getWinRateStyle(winRate))
+      }
 
       if (ourMap.picks > 0) {
         ws.cell(mapRow, 4).number(ourMap.picks)
       }
+
+      if (ourMap.bans > 0) {
+        ws.cell(mapRow, 5).number(ourMap.bans)
+      }
     }
 
     if (theirMap) {
-      const winRate = theirMap.wins / (theirMap.wins + theirMap.losses)
-      ws.cell(mapRow, 6).string(`${theirMap.wins} - ${theirMap.losses}`)
-      ws.cell(mapRow, 7).number(winRate).style(getWinRateStyle(winRate))
+      if (theirMap.wins + theirMap.losses > 0) {
+        const winRate = theirMap.wins / (theirMap.wins + theirMap.losses)
+        ws.cell(mapRow, 7).string(`${theirMap.wins} - ${theirMap.losses}`)
+        ws.cell(mapRow, 8).number(winRate).style(getWinRateStyle(winRate))
+      }
 
       if (theirMap.picks > 0) {
-        ws.cell(mapRow, 8).number(theirMap.picks)
+        ws.cell(mapRow, 9).number(theirMap.picks)
+      }
+
+      if (theirMap.bans > 0) {
+        ws.cell(mapRow, 10).number(theirMap.bans)
       }
     }
 
@@ -320,18 +343,18 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
   }
 
   ws.column(1).width = 30
-  ws.column(5).width = 5
-  ws.cell(firstMapRow, 2, lastMapRow, 8).style({ alignment: { horizontal: 'center' } })
+  ws.column(6).width = 5
+  ws.cell(firstMapRow, 2, lastMapRow, 10).style({ alignment: { horizontal: 'center' } })
   ws.cell(firstMapRow, 3, lastMapRow, 3).style({ numberFormat: '#%; -#%; 0%' })
-  ws.cell(firstMapRow, 7, lastMapRow, 7).style({ numberFormat: '#%; -#%; 0%' })
+  ws.cell(firstMapRow, 7, lastMapRow, 8).style({ numberFormat: '#%; -#%; 0%' })
 
-  ws.cell(1, 1, 1, 8, true)
+  ws.cell(1, 1, 1, 10, true)
     .string('Maps')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
-  ws.cell(3, 2, 3, 4, true)
+  ws.cell(3, 2, 3, 5, true)
     .string('Us')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(3, 6, 3, 8, true)
+  ws.cell(3, 7, 3, 10, true)
     .string('Them')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
   ws.cell(4, 2)
@@ -343,14 +366,20 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
   ws.cell(4, 4)
     .string('Picked')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
-  ws.cell(4, 6)
-    .string('Record')
+  ws.cell(4, 5)
+    .string('Banned')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
   ws.cell(4, 7)
-    .string('Win %')
+    .string('Record')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
   ws.cell(4, 8)
+    .string('Win %')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 9)
     .string('Picked')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 10)
+    .string('Banned')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
 }
 
@@ -368,7 +397,6 @@ const fillHeroesSheet = async (ws, heroData, title) => {
   let currentRow = 4
 
   for (const row of heroData) {
-    const x = getRoleColor(row.role)
     ws.cell(currentRow, 1).string(row.role).style({ fill: getFill(getRoleColor(row.role)) })
     ws.cell(currentRow, 2).string(row.hero)
     ws.cell(currentRow, 3).string(row.player)
