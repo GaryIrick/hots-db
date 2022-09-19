@@ -670,7 +670,7 @@ const fillMatchHistorySheet = (ws, matches) => {
 
   ws.column(1).width = 18
   ws.column(2).width = 12
-  ws.column(3).width = 20
+  ws.column(3).width = 22
   ws.column(4).width = 2
   ws.column(5 + playerCount).width = 2
   ws.column(9 + playerCount).width = 2
