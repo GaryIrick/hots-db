@@ -21,7 +21,7 @@ resource "azurerm_function_app" "hots_db_functions" {
   app_settings = {
     https_only                     = true
     FUNCTIONS_WORKER_RUNTIME       = "node"
-    WEBSITE_NODE_DEFAULT_VERSION   = "~14"
+    WEBSITE_NODE_DEFAULT_VERSION   = "~16"
     FUNCTION_APP_EDIT_MODE         = "readonly"
     WEBSITE_RUN_FROM_PACKAGE       = "1"
     SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
