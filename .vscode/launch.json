@@ -166,6 +166,19 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Pull replays by division",
+            "program": "${workspaceFolder}/commands/pullReplaysForDivision.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "14",
+                "c-east"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch prune",
             "program": "${workspaceFolder}/commands/prune.js",
             "skipFiles": [

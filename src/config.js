@@ -65,5 +65,6 @@ module.exports = {
       'Towers of Doom',
       'Volskaya Foundry'
     ]
-  }
+  },
+  replaysByDivisionDirectory: 'D:\\ReplaysByDivision'
 }
