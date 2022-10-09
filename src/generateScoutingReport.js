@@ -44,7 +44,7 @@ const colors = {
 }
 
 const getTeamByName = async (container, teamName) => {
-  const query = container.items.query(`SELECT * FROM t WHERE t.name = '${teamName}'`)
+  const query = container.items.query(`SELECT * FROM t WHERE t.name = '${teamName.replace(/'/g, '\\\'')}'`)
   const response = await query.fetchNext()
   if (response.resources.length === 0) {
     throw new Error(`Team ${teamName} does not exist.`)
