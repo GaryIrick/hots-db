@@ -180,7 +180,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
 
           hero.count++
           hero.rounds.push(player.round)
-          hero.isWin.push(game.isWin ? 1 : 0)
+          hero.isWin.push(game.isWin ? 0 : 1)
         }
 
         for (const ban of team.bans) {
@@ -423,32 +423,20 @@ const fillWithAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
   const firstThemRow = firstUsRow + heroCount + 2
   const minGames = 2
 
-  ws.cell(firstUsRow - 1, 1, firstUsRow - 1, 3, true)
-    .string('When We Pick - Good')
-    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(firstUsRow - 1, 5, firstUsRow - 1, 7, true)
-    .string('When We Pick - Bad')
+  ws.cell(firstUsRow - 1, 1, firstUsRow - 1, 7, true)
+    .string('When We Pick')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
-  ws.cell(firstUsRow - 1, 9, firstUsRow - 1, 11, true)
-    .string('When We Face - Good')
-    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(firstUsRow - 1, 13, firstUsRow - 1, 15, true)
-    .string('When We Face - Bad')
+  ws.cell(firstUsRow - 1, 9, firstUsRow - 1, 15, true)
+    .string('When We Face')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
-  ws.cell(firstThemRow - 1, 1, firstThemRow - 1, 3, true)
-    .string('When They Pick - Good')
-    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(firstThemRow - 1, 5, firstThemRow - 1, 7, true)
-    .string('When They Pick - Bad')
+  ws.cell(firstThemRow - 1, 1, firstThemRow - 1, 7, true)
+    .string('When They Pick')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
-  ws.cell(firstThemRow - 1, 9, firstThemRow - 1, 11, true)
-    .string('When They Face - Good')
-    .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(firstThemRow - 1, 13, firstThemRow - 1, 15, true)
-    .string('When They Face - Bad')
+  ws.cell(firstThemRow - 1, 9, firstThemRow - 1, 15, true)
+    .string('When They Face')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
   const ourGoodPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
