@@ -40,6 +40,9 @@ module.exports = {
   aws: {
     credentialsSecretName: 'aws-credentials'
   },
+  google: {
+    credentialsSecretName: 'google-credentials'
+  },
   acme: {
     caUrl: acme.directory.letsencrypt.production,
     email: 'garyirick@gmail.com'

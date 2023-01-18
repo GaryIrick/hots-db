@@ -1,26 +1,29 @@
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { SecretClient } = require('@azure/keyvault-secrets')
-const AWS = require('aws-sdk')
+const { Storage } = require('@google-cloud/storage')
 const createWorkQueue = require('./lib/createWorkQueue')
 const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
 const streamToBuffer = require('./lib/streamToBuffer')
 const {
   azure: { keyVault, storage: { account, rawContainer, configContainer } },
-  aws: { credentialsSecretName }
+  google: { credentialsSecretName }
 } = require('./config')
 
 const mostRecentFilename = 'heroes-profile-most-recent.txt'
 
-const getS3 = async () => {
+const getGoogleStorage = async () => {
   const vaultUrl = `https://${keyVault}.vault.azure.net`
   const secretClient = new SecretClient(vaultUrl, new DefaultAzureCredential())
   const secret = await secretClient.getSecret(credentialsSecretName)
   const creds = JSON.parse(secret.value)
-  AWS.config.credentials = new AWS.Credentials(creds.accessKeyId, creds.secretAccessKey)
-  const s3 = new AWS.S3()
-
-  return s3
+  const googleProjectId = creds.project_id
+  const credentials = {
+    client_email: creds.client_email,
+    private_key: creds.private_key
+  }
+  const googleStorage = new Storage({ credentials })
+  return { googleStorage, googleProjectId }
 }
 
 const getMostRecent = async (configFilesystem) => {
@@ -40,41 +43,36 @@ const saveMostRecent = async (configFilesystem, mostRecent) => {
 }
 
 const crackUrl = (url) => {
-  const s3Match = (url || '').match(/([a-z-]+)\.s3.*\.amazonaws\.com\/(.*)/)
+  const storageMatch = (url || '').match(/https:\/\/storage\.cloud\.google\.com\/(.*)\/(.*)/)
 
-  if (s3Match && s3Match.length === 3) {
+  if (storageMatch && storageMatch.length === 3) {
     return {
-      bucket: s3Match[1],
-      key: s3Match[2]
+      bucket: storageMatch[1],
+      file: storageMatch[2]
     }
   } else {
     return undefined
   }
 }
 
-const copyReplayToAzure = async ({ rawFilesystem, s3, game, log }) => {
-  const s3Location = crackUrl(game.url)
+const copyReplayToAzure = async ({ rawFilesystem, googleStorage, googleProjectId, game, log }) => {
+  const googleLocation = crackUrl(game.url)
 
-  if (!s3Location) {
+  if (!googleLocation) {
     return
   }
 
-  const { bucket, key } = s3Location
-  const blobPath = `pending/hp/${Math.floor(game.replayID / 10000)}/${game.replayID}-${key}`
+  const { bucket, file } = googleLocation
+  const blobPath = `pending/hp/${Math.floor(game.replayID / 10000)}/${game.replayID}-${file}`
   let replay
 
   try {
-    const awsGetStream = s3.getObject({
-      Bucket: bucket,
-      Key: key,
-      RequestPayer: 'requester'
-    })
-      .createReadStream()
+    const googleReadStream = googleStorage.bucket(bucket).file(file).createReadStream({ userProject: googleProjectId })
 
-    replay = await streamToBuffer(awsGetStream)
+    replay = await streamToBuffer(googleReadStream)
   } catch (err) {
-    if (err.statusCode === 403 || err.statusCode === 404) {
-      log(`skipped ${blobPath}`)
+    console.log(err.message)
+    if (err.code === 404) {
       return
     } else {
       throw err
@@ -90,7 +88,7 @@ module.exports = async (maxCount, log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const configFilesystem = datalake.getFileSystemClient(configContainer)
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
-  const s3 = await getS3()
+  const { googleStorage, googleProjectId } = await getGoogleStorage()
   let mostRecent = await getMostRecent(configFilesystem)
   const queue = createWorkQueue(50, copyReplayToAzure)
 
@@ -114,7 +112,7 @@ module.exports = async (maxCount, log) => {
             throw new Error(`Replay ${game.replayID} has game_type of ${game.game_type}.`)
           }
 
-          queue.enqueue({ rawFilesystem, s3, game, log })
+          queue.enqueue({ rawFilesystem, googleStorage, googleProjectId, game, log })
         }
 
         if (++count >= maxCount) {
