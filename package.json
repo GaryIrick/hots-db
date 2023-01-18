@@ -63,6 +63,7 @@
     "@azure/storage-blob",
     "@azure/storage-file-datalake",
     "@azure/cosmos",
+    "@google-cloud/storage",
     "acme-client",
     "aws-sdk",
     "delay",
@@ -86,28 +87,5 @@
     "!.eslintrc.js",
     "!terraform",
     "!package-lock.json"
-  ],
-  "bundleDependencies": [
-    "@azure/arm-cdn",
-    "@azure/arm-dns",
-    "@azure/cosmos",
-    "@azure/identity",
-    "@azure/keyvault-certificates",
-    "@azure/keyvault-secrets",
-    "@azure/storage-blob",
-    "@azure/storage-file-datalake",
-    "@azure/cosmos",
-    "acme-client",
-    "aws-sdk",
-    "delay",
-    "empeeku",
-    "fastq",
-    "hots-parser",
-    "lodash",
-    "moment",
-    "node-forge",
-    "superagent",
-    "tmp-promise",
-    "uuid"
   ]
 }
