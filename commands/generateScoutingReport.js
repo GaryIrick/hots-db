@@ -5,7 +5,7 @@ const run = async (ourTeam, theirTeam, startSeason) => {
 }
 
 if (process.argv.length !== 5) {
-  console.log('Usage: generateImports <our team name> <their team name> <startSeason>')
+  console.log('Usage: generateScoutingReport <our team name> <their team name> <startSeason>')
   process.exit(1)
 }
 
