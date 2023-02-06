@@ -99,7 +99,7 @@ const getTeamData = async (teamsContainer, sqlImportFilesystem, teamName, startS
   const opponentBans = []
   const currentSeasonMatches = []
 
-  for (const season of teamData.seasons.filter(s => s.season >= startSeason && s.season <= endSeason)) {
+  for (const season of (teamData.seasons || []).filter(s => s.season >= startSeason && s.season <= endSeason)) {
     for (const match of season.matches) {
       const gamesForMatch = []
 
