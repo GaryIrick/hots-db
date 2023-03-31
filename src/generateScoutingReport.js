@@ -693,7 +693,7 @@ const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const matchHistorySheet = wb.addWorksheet('Match History')
   wb.addWorksheet('Notes')
 
-  const heroesThisSeason = await getHeroWinRatesData(theirTeamData.name, currentSeason - 1, currentSeason, false)
+  const heroesThisSeason = await getHeroWinRatesData(theirTeamData.name, currentSeason, currentSeason, false)
   const heroesAllTime = await getHeroWinRatesData(theirTeamData.name, 1, currentSeason, true)
 
   fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
