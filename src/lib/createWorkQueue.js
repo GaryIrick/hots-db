@@ -8,6 +8,7 @@ module.exports = (size, fn) => {
     const id = uuid()
     const promise = fn(args)
     promise.id = id
+    running.push(promise)
     promise.then(() => {
       running = running.filter(r => r.id !== id)
 
@@ -18,8 +19,6 @@ module.exports = (size, fn) => {
         kickOff(nextArgs)
       }
     })
-
-    running.push(promise)
   }
 
   return {
