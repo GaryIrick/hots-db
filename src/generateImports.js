@@ -186,7 +186,12 @@ const generateImports = async ({ parsedFilesystem, sqlImportFilesystem, sparkImp
     const jsonFilename = changeExtension(blobName, 'import.json.gz')
     const json = await getImportJson(parse)
     await putCompressedJson(sqlImportFilesystem, jsonFilename, json)
-    await putCompressedJson(sparkImportFilesystem, jsonFilename, json)
+
+    // We aren't currently using this data for anything.  If we decide
+    // we want to start, we can grab the "processed" directory from the
+    // sql-import container, it's the same data.
+    //
+    // await putCompressedJson(sparkImportFilesystem, jsonFilename, json)
     log(`generated imports for ${blobName}`)
     await moveBlob(parsedFilesystem, blobName, blobName.replace('pending/', 'processed/'))
   } catch (err) {

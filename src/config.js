@@ -69,5 +69,6 @@ module.exports = {
       'Volskaya Foundry'
     ]
   },
-  replaysByDivisionDirectory: 'D:\\ReplaysByDivision'
+  replaysByDivisionDirectory: 'D:\\ReplaysByDivision',
+  cacheDirectory: 'T:\\hots-db-cache'
 }

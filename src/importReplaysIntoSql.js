@@ -7,6 +7,7 @@ const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const uuid = require('uuid').v4
 const { padStart } = require('lodash')
+const createWorkQueue = require('./lib/createWorkQueue')
 const insertRow = require('./db/insertRow')
 const getCompressedJson = require('./lib/getCompressedJson')
 const getSqlServer = require('./db/getSqlServer')
@@ -89,6 +90,16 @@ const importPlayers = async (db, json) => {
   }
 
   return playerMap
+}
+
+const moveFinishedBlobs = async ({ sqlImportFilesystem, blobName, success, log }) => {
+  if (success) {
+    await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'processed/'))
+  } else {
+    await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'error/'))
+  }
+
+  log(`moved ${blobName}`)
 }
 
 const importGame = async (db, json, source, playerMap) => {
@@ -188,9 +199,10 @@ const importGame = async (db, json, source, playerMap) => {
   }
 }
 
-const importReplay = async (sqlImportFilesystem, blobName, db, log) => {
+const importReplay = async (sqlImportFilesystem, blobName, db, queue, log) => {
   log(`importing ${blobName}`)
   const txn = db.transaction()
+  let success = false
 
   try {
     await txn.begin()
@@ -200,20 +212,23 @@ const importReplay = async (sqlImportFilesystem, blobName, db, log) => {
     await importGame(txn, json, source, playerMap)
 
     await txn.commit()
-    await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'processed/'))
+    success = true
     log(`imported ${blobName}`)
   } catch (err) {
     try {
       await txn.rollback()
     } catch (ignored) {}
-    await moveBlob(sqlImportFilesystem, blobName, blobName.replace('pending/', 'error/'))
+
     log(`error with ${blobName}: ${err}`)
   }
+
+  queue.enqueue({ sqlImportFilesystem, blobName, success, log })
 }
 
 module.exports = async (maxCount, log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const sqlImportFilesystem = datalake.getFileSystemClient(sqlImportContainer)
+  const queue = createWorkQueue(50, moveFinishedBlobs)
   const db = await getSqlServer()
 
   let keepGoing = true
@@ -230,7 +245,7 @@ module.exports = async (maxCount, log) => {
       }
 
       if (!item.isDirectory) {
-        await importReplay(sqlImportFilesystem, item.name, db, log)
+        await importReplay(sqlImportFilesystem, item.name, db, queue, log)
 
         if (++count >= maxCount) {
           keepGoing = false
@@ -240,6 +255,7 @@ module.exports = async (maxCount, log) => {
   }
 
   await db.close()
+  await queue.drain()
 
   return count
 }
