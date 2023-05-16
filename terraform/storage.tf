@@ -39,6 +39,24 @@ resource "azurerm_storage_container" "parsed" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_management_policy" "parsed_replays_rule" {
+  storage_account_id = azurerm_storage_account.hots_db_data.id
+  rule {
+    name = "delete-processed-replays"
+
+    enabled = true
+    filters {
+      prefix_match = ["raw/processed/hp"]
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        delete_after_days_since_modification_greater_than = 60
+      }
+    }
+  }
+}
+
 resource "azurerm_storage_container" "sql_import" {
   name                  = "sql-import"
   storage_account_name  = azurerm_storage_account.hots_db_data.name
