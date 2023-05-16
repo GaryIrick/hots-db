@@ -19,10 +19,6 @@ provider "azurerm" {
   }
 }
 
-provider "databricks" {
-  azure_workspace_resource_id = module.db_workspace.id
-}
-
 
 data "azurerm_client_config" "current" {}
 

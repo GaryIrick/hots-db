@@ -10,11 +10,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.14.0"
     }
-
-    databricks = {
-      source  = "databricks/databricks"
-      version = "~> 1.0.2"
-    }
   }
 
   required_version = ">= 0.15"
