@@ -16,7 +16,6 @@ module.exports = {
     },
     storage: {
       account: 'hotsdbdata',
-      daysToRetainReplays: 60,
       configContainer: 'config',
       rawContainer: 'raw',
       parsedContainer: 'parsed',
