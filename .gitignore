@@ -469,6 +469,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 **/.terraform/*
+.terraform.lock.hcl
 
 hots-db.zip
 **/*.refactorlog
