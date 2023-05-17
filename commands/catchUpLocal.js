@@ -60,7 +60,7 @@ const run = async () => {
   await callUntilZero('importing NGS teams into SQL', () => importNgsTeamsIntoSql(100, () => {}), log)
   await callUntilZero('importing NGS matches into SQL', () => importNgsMatchesIntoSql(100, () => {}), log)
   // Get rid of old replay files and empty directories in the "pending" folder of each storage container.
-  await callOnce('Pruning old replays and pending directories', () => prune(() => {}), log)
+  await callOnce('Pruning empty pending directories', () => prune(() => {}), log)
 }
 
 run().then(() => log('Done.'))

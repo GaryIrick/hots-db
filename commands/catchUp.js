@@ -90,7 +90,7 @@ const run = async () => {
   await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
 
   // Get rid of old replay files and empty directories in the "pending" folder of each storage container.
-  await callOnce('Pruning old replays and pending directories', () => prune(() => {}), log)
+  await callOnce('Pruning empty pending directories', () => prune(() => {}), log)
 }
 
 run().then(() => log('Done.'))
