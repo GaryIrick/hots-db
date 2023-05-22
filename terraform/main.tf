@@ -22,8 +22,6 @@ provider "azurerm" {
 
 data "azurerm_client_config" "current" {}
 
-data "azuread_client_config" "current" {}
-
 data "azuread_user" "me" {
   user_principal_name = "garyirick_gmail.com#EXT#@garyirickgmail.onmicrosoft.com"
 }
