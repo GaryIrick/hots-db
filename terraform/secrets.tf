@@ -68,7 +68,7 @@ resource "azurerm_key_vault_access_policy" "secret_policy_for_me" {
 resource "azurerm_key_vault_access_policy" "function_secret_policy" {
   key_vault_id = azurerm_key_vault.key_vault.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_function_app.hots_db_functions.identity[0].principal_id
+  object_id    = azurerm_windows_function_app.hots_db_functions.identity[0].principal_id
 
   secret_permissions = [
     "Get"

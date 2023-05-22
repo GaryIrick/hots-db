@@ -87,7 +87,7 @@ resource "azurerm_storage_account" "functions" {
 resource "azurerm_role_assignment" "functions_storage_access" {
   scope                = azurerm_storage_account.hots_db_data.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_function_app.hots_db_functions.identity[0].principal_id
+  principal_id         = azurerm_windows_function_app.hots_db_functions.identity[0].principal_id
 }
 
 // A container named "$web" will be created automatically.

@@ -8,7 +8,7 @@ resource "azurerm_dns_cname_record" "api_cname" {
   resource_group_name = local.domain_names_resource_group
   zone_name           = data.azurerm_dns_zone.hots_helper.name
   ttl                 = 60
-  record              = azurerm_function_app.hots_db_functions.default_hostname
+  record              = azurerm_windows_function_app.hots_db_functions.default_hostname
 }
 
 resource "azurerm_dns_txt_record" "api_txt" {
@@ -17,7 +17,7 @@ resource "azurerm_dns_txt_record" "api_txt" {
   zone_name           = data.azurerm_dns_zone.hots_helper.name
   ttl                 = 60
   record {
-    value = azurerm_function_app.hots_db_functions.custom_domain_verification_id
+    value = azurerm_windows_function_app.hots_db_functions.custom_domain_verification_id
   }
 }
 
@@ -48,7 +48,7 @@ resource "azurerm_dns_cname_record" "cdnverify_cname" {
 resource "azurerm_app_service_custom_hostname_binding" "api_hostname_binding" {
   resource_group_name = local.resource_group
   hostname            = trim(azurerm_dns_cname_record.api_cname.fqdn, ".")
-  app_service_name    = azurerm_function_app.hots_db_functions.name
+  app_service_name    = azurerm_windows_function_app.hots_db_functions.name
   depends_on          = [azurerm_dns_txt_record.api_txt]
 
   lifecycle {
