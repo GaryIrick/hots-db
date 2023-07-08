@@ -21,6 +21,7 @@ resource "azurerm_windows_function_app" "hots_db_functions" {
     WEBSITE_RUN_FROM_PACKAGE       = "1"
     SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
     SUBSCRIPTION_ID                = data.azurerm_client_config.current.subscription_id
+    AzureWebJobsFeatureFlags       = "EnableWorkerIndexing"
     # AZURE_LOG_LEVEL                = "verbose"
   }
 
@@ -39,6 +40,7 @@ resource "azurerm_windows_function_app" "hots_db_functions" {
       allowed_origins = [
         "https://hots-helper.com",
         "https://www.hots-helper.com",
+        "https://portal.azure.com"
       ]
     }
   }
