@@ -475,3 +475,6 @@ hots-db.zip
 **/*.refactorlog
 **/*.csv
 **/*.xlsx
+
+__azurite*
+__blobstorage*
