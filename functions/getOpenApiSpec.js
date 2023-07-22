@@ -41,23 +41,6 @@ module.exports = async function (request, context) {
                   type: 'string',
                   format: 'date'
                 }
-              },
-              {
-                name: 'role',
-                in: 'query',
-                description: 'if given, only return heroes for this role',
-                required: false,
-                schema: {
-                  type: 'string',
-                  enum: [
-                    'Ranged Assassin',
-                    'Melee Assassin',
-                    'Healer',
-                    'Tank',
-                    'Bruiser',
-                    'Support'
-                  ]
-                }
               }
             ],
             responses: {

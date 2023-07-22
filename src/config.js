@@ -28,7 +28,8 @@ module.exports = {
       readOnlyKey: 'cosmos-read-only-key',
       readWriteKey: 'cosmos-read-write-key',
       matchesContainer: 'ngs-matches',
-      teamsContainer: 'ngs-teams'
+      teamsContainer: 'ngs-teams',
+      heroStatsContainer: 'hero-stats'
     }
   },
   sqlServer: {

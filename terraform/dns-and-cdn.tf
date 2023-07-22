@@ -112,7 +112,7 @@ resource "azurerm_cdn_endpoint" "web" {
 # It would be really nice to use managed certificates, but Azure doesn't support
 # that for apex domains, so we roll our own and use it.
 #
-# Here are the instructions for onboard an apex domain.  This terraform should
+# Here are the instructions for onboarding an apex domain.  This terraform should
 # take care of creating all of the DNS records needed, just add the endpoint.
 #
 # https://docs.microsoft.com/en-us/azure/cdn/onboard-apex-domain

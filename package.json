@@ -64,7 +64,9 @@
     "!site",
     "!.eslintrc.js",
     "!terraform",
-    "!package-lock.json"
+    "!package-lock.json",
+    "!__azurite*",
+    "!local.settings.json"
   ],
   "bundleDependencies": [
     "@azure/arm-cdn",

@@ -207,6 +207,19 @@
             "args": []
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Publish hero stats",
+            "program": "${workspaceFolder}/commands/publishHeroStats.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": [
+                "20230701",
+                "20230710"
+            ]
+        },
+        {
             "name": "Azure functions",
             "type": "node",
             "request": "attach",
