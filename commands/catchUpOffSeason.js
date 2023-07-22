@@ -1,7 +1,11 @@
+const { DefaultAzureCredential } = require('@azure/identity')
 const agent = require('superagent')
 const moment = require('moment')
-const { DefaultAzureCredential } = require('@azure/identity')
-const { azure: { resourceGroup, functionAppUrl, functionAppName }, ngs: { currentSeason } } = require('../src/config')
+const parseReplays = require('../src/parseReplays')
+const generateImports = require('../src/generateImports')
+const importReplaysIntoSql = require('../src/importReplaysIntoSql')
+const prune = require('../src/prune')
+const { azure: { resourceGroup, functionAppUrl, functionAppName } } = require('../src/config')
 
 const getHostKey = async () => {
   const c = new DefaultAzureCredential()
@@ -47,16 +51,31 @@ const callUntilZero = async (name, fn, log) => {
   }
 }
 
+const callOnce = async (name, fn, log) => {
+  log(`${name}`)
+
+  try {
+    const count = await fn()
+    log(`${name} (${count})`)
+  } catch (e) {
+    log(`ERROR: ${e}`)
+  }
+}
+
 const log = (msg) => {
   console.log(`${moment().format('hh:mm:ss')}: ${msg}`)
 }
 
 const run = async () => {
   const hostKey = await getHostKey()
-  log('Finding NGS matches')
-  await callAzureFunction('find-ngs-matches', hostKey, { season: currentSeason })
-  await callUntilZero('Copying NGS matches', () => callAzureFunction('copy-ngs-matches', hostKey, { maxCount: 100 }), log)
+
   await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
+  await callUntilZero('Parsing replays', () => parseReplays(100, () => {}), log)
+  await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
+  await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
+
+  // Get rid of old replay files and empty directories in the "pending" folder of each storage container.
+  await callOnce('Pruning empty pending directories', () => prune(() => {}), log)
 }
 
 run().then(() => log('Done.'))
