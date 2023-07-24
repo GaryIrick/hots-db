@@ -16,7 +16,7 @@ module.exports = async function (request, context) {
         url: isLocal ? 'http://localhost:7071/openapi' : 'https://api.hots-helper.com/openapi'
       },
       logo_url: 'https://hots-helper.com/hots-logo.png',
-      contact_email: 'garyirick@gmail.com',
+      contact_email: 'admin@hots-helper.com',
       legal_info_url: 'https://hots-helper.com/legal.html'
     }
   }
