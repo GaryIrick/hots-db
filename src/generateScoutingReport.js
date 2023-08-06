@@ -681,7 +681,7 @@ const fillMatchHistorySheet = (ws, matches) => {
   }
 }
 
-const generateWorkbook = async (ourTeamData, theirTeamData) => {
+const generateWorkbook = async (ourTeamData, theirTeamData, startSeason) => {
   const wb = new xl.Workbook()
   const mapSheet = wb.addWorksheet('Maps')
   const heroesThisSeasonSheet = wb.addWorksheet('Hero Win Rates - This Season')
@@ -693,7 +693,7 @@ const generateWorkbook = async (ourTeamData, theirTeamData) => {
   const matchHistorySheet = wb.addWorksheet('Match History')
   wb.addWorksheet('Notes')
 
-  const heroesThisSeason = await getHeroWinRatesData(theirTeamData.name, currentSeason, currentSeason, false)
+  const heroesThisSeason = await getHeroWinRatesData(theirTeamData.name, startSeason, currentSeason, false)
   const heroesAllTime = await getHeroWinRatesData(theirTeamData.name, 1, currentSeason, true)
 
   fillMapSheet(mapSheet, ourTeamData.maps, theirTeamData.maps)
@@ -716,6 +716,6 @@ module.exports = async (ourTeam, theirTeam, startSeason, log) => {
   const ourTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, ourTeam, startSeason, currentSeason, log)
   const theirTeamData = await getTeamData(teamsContainer, sqlImportFilesystem, theirTeam, startSeason, currentSeason, log)
 
-  const xlsx = await generateWorkbook(ourTeamData, theirTeamData)
+  const xlsx = await generateWorkbook(ourTeamData, theirTeamData, startSeason)
   fs.writeFileSync(`${ourTeam.replace(/[^a-zA-Z0-9]/g, '')}-vs-${theirTeam.replace(/[^a-zA-Z0-9]/g, '')}-${moment().format('YYYY-MM-DD')}.xlsx`, xlsx)
 }
