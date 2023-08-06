@@ -1,26 +1,9 @@
 DECLARE @teamName nvarchar(100);
 DECLARE @teamId uniqueidentifier;
 
-SET @teamName = ''
-
-SELECT @teamId = TeamId FROM Team WHERE Name = @teamName;
-
-DECLARE @sources as TABLE(source nvarchar(4))
-INSERT INTO @sources
-VALUES
-  ('hp'),
-  ('ngs')
-
 DECLARE @seasons AS TABLE(Season int)
 INSERT INTO @seasons
 VALUES
-  (6),
-  (7),
-  (8),
-  (9),
-  (10),
-  (11),
-  (12),
   (13),
   (14),
   (15)
@@ -28,69 +11,41 @@ VALUES
 
 DECLARE @targetWinRate AS float = 0.00;
 
-WITH players AS
-(
-  SELECT
-    p.Name,
-    p.PlayerId
-  FROM
-    Player p
-  WHERE
-    p.BattleTag in
-    (
-      'Rackham#1819',
-      'EmVP#1269',
-      'aaron#12738',
-      'WENlS#11638',
-      'Aura#1724',
-      'TempestJet#11794'
-    )
-),
-heroes AS
+with heroes as
 (
   SELECT
     h.Role,
     h.Name AS Hero,
-    p.Name AS Player,
-    g.Source,
+	bs.PlayerId,
     0.0 + bs.Kills + bs.Assists AS Takedowns,
     0.0 + bs.Deaths AS Deaths,
     bs.IsWinner * 1.0 AS IsWinner
-  FROM
-    players p
-    JOIN BoxScoreEx bs
-      ON bs.PlayerId = p.PlayerId
+  FROM    
+    BoxScoreEx bs
     JOIN Game g
       ON g.GameId = bs.GameId
     JOIN Hero h
       ON h.HeroId = bs.HeroId
-    LEFT JOIN MatchGame mg
+    JOIN MatchGame mg
       ON mg.GameId = g.GameId
-    LEFT JOIN Match m
+    JOIN Match m
       ON m.MatchId = mg.MatchId
   WHERE
-    g.Source IN (SELECT source FROM @sources)
-    AND
-    (
-      m.Season IS NULL
-      OR m.Season IN (SELECT Season FROM @seasons)
-    )
+	m.season in (13, 14, 15)
+	AND m.division in ('B', 'C', 'D')
 ),
 stats AS
 (
   SELECT
     Role,
     Hero,
-    Player,
-    UPPER(Source) AS Source,
     COUNT(*) AS Games,
+	COUNT(DISTINCT PlayerId) AS Players,
     AVG(IsWinner) AS WinPercent,
     CASE WHEN SUM(Deaths) = 0 THEN SUM(Takedowns) ELSE SUM(Takedowns) / SUM(Deaths) END AS KDA
   FROM
     heroes
   GROUP BY
-    Player,
-    Source,
     Role,
     Hero
 )
