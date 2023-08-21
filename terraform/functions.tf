@@ -15,6 +15,7 @@ resource "azurerm_windows_function_app" "hots_db_functions" {
   storage_account_access_key  = azurerm_storage_account.functions.primary_access_key
   https_only                  = true
   functions_extension_version = "~4"
+  daily_memory_time_quota     = 25000
 
   app_settings = {
     FUNCTION_APP_EDIT_MODE         = "readonly"
