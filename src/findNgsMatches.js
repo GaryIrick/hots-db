@@ -48,11 +48,47 @@ const importMatches = async (matchesData, container, log) => {
   for (const match of matchesData) {
     if (match.reported && match.replays) {
       const matchId = match.matchId
+      const matchGames = []
+
+      for (let i = 1; i <= 7; i++) {
+        const replay = match.replays[i]
+
+        // There was one replay that had .tempUrl, but not url, just skip it.  Data is broken, per Wraithling.
+        if (replay && replay.url) {
+          matchGames.push({
+            replayKey: replay.url,
+            winner: match.other[`${i}`] ? (match.other[`${i}`].winner) : undefined
+          })
+        }
+      }
+
       const existingMatch = await container.item(matchId, matchId).read()
 
       if (existingMatch.resource) {
-        // We've already seen this match, skip it.
-        continue
+        // Check to see if any of the data we care about has changed.
+        const oldInfo = {
+          caster: existingMatch.resource.caster,
+          vodLinks: existingMatch.resource.vodLinks,
+          games: existingMatch.resource.games
+        }
+        const newInfo = {
+          caster: match.casterName,
+          vodLinks: match.vodLinks,
+          games: matchGames
+        }
+
+        const foundChanges = JSON.stringify(newInfo) !== JSON.stringify(oldInfo)
+
+        if (!foundChanges) {
+          // We have seen this match before, and the caster and game info has not changed, so skip it.
+          continue
+        }
+
+        if (JSON.stringify(oldInfo.games) !== JSON.stringify(newInfo.games)) {
+          log(`Some games are changed for match ${matchId}, this is unexpected.`)
+        }
+
+        log(`Found changes for match ${matchId}, updating it.`)
       }
 
       const doc = {
@@ -62,7 +98,7 @@ const importMatches = async (matchesData, container, log) => {
         round: match.round,
         isPlayoffs: match.type === 'tournament',
         division: match.divisionConcat || 'unknown',
-        games: [],
+        games: matchGames,
         homeTeam: {
           id: match.home.id,
           name: match.home.teamName,
@@ -80,18 +116,6 @@ const importMatches = async (matchesData, container, log) => {
         caster: match.casterName,
         vodLinks: match.vodLinks,
         status: {}
-      }
-
-      for (let i = 1; i <= 7; i++) {
-        const replay = match.replays[i]
-
-        // There was one replay that had .tempUrl, but not url, just skip it.  Data is broken, per Wraithling.
-        if (replay && replay.url) {
-          doc.games.push({
-            replayKey: replay.url,
-            winner: match.other[`${i}`] ? (match.other[`${i}`].winner) : undefined
-          })
-        }
       }
 
       await container.items.upsert(doc)
