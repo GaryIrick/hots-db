@@ -39,6 +39,12 @@ resource "azurerm_storage_container" "parsed" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_container" "bot_graphs" {
+  name                  = "bot-graphs"
+  storage_account_name  = azurerm_storage_account.hots_db_data.name
+  container_access_type = "private"
+}
+
 resource "azurerm_storage_management_policy" "parsed_replays_rule" {
   storage_account_id = azurerm_storage_account.hots_db_data.id
   rule {
