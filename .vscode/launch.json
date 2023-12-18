@@ -132,8 +132,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Catch up - local",
-            "program": "${workspaceFolder}/commands/catchUpLocal.js",
+            "name": "Catch up - offseason",
+            "program": "${workspaceFolder}/commands/catchUpOffSeason.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],
