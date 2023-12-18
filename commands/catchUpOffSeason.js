@@ -69,9 +69,9 @@ const log = (msg) => {
 const run = async () => {
   const hostKey = await getHostKey()
 
-  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 100 }), log)
-  await callUntilZero('Parsing replays', () => parseReplays(100, () => {}), log)
-  await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
+  await callUntilZero('Finding Storm League games', () => callAzureFunction('find-storm-league-games', hostKey, { maxCount: 500 }), log)
+  await callUntilZero('Parsing replays', () => parseReplays(500, () => {}), log)
+  await callUntilZero('Generating imports', () => generateImports(500, () => {}), log)
   await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
 
   // Get rid of old replay files and empty directories in the "pending" folder of each storage container.
