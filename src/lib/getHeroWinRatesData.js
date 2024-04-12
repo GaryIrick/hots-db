@@ -54,8 +54,9 @@ const sql = `
       g.Source IN (SELECT source FROM @sources)
       AND
       (
-        m.Season IS NULL
-        OR m.Season IN (SELECT Season FROM @seasons)
+        (m.Season IN (SELECT Season FROM @seasons))
+        OR
+        (g.Source <> 'ngs')
       )
   ),
   stats AS
