@@ -80,7 +80,4 @@
     <Build Include="Views\BoxScoreEx.sql" />
     <Build Include="Views\GameForTeam.sql" />
   </ItemGroup>
-  <ItemGroup>
-    <RefactorLog Include="Replays.refactorlog" />
-  </ItemGroup>
 </Project>

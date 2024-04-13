@@ -6,7 +6,8 @@ SELECT
   h.Name AS Hero,
   h.Role AS Role,
   p.Name as PlayerName,
-  p.BattleTag as PlayerTag
+  p.BattleTag as PlayerTag,
+  g.Date
 FROM
   BoxScore bs
   JOIN Game g
