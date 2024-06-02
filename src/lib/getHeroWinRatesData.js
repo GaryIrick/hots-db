@@ -20,7 +20,8 @@ const sql = `
   (
     SELECT
       tp.PlayerId,
-      p.Name
+      p.Name,
+      p.Tag AS Tag
     FROM
       TeamPlayer tp
       JOIN Player p
@@ -34,6 +35,7 @@ const sql = `
       h.Role,
       h.Name AS Hero,
       p.Name AS Player,
+      p.Tag,
       g.Source,
       0.0 + bs.Kills + bs.Assists AS Takedowns,
       0.0 + bs.Deaths AS Deaths,
@@ -65,6 +67,7 @@ const sql = `
       Role,
       Hero,
       Player,
+      Tag,
       UPPER(Source) AS Source,
       COUNT(*) AS Games,
       AVG(IsWinner) AS WinPercent,
@@ -73,6 +76,7 @@ const sql = `
       heroes
     GROUP BY
       Player,
+      Tag,
       Source,
       Role,
       Hero
@@ -112,6 +116,7 @@ module.exports = async (teamName, firstSeason, lastSeason, includeHeroesProfile)
     role: row.Role,
     hero: row.Hero,
     player: row.Player,
+    tag: row.Tag,
     source: row.Source,
     games: row.Games,
     winRate: row.WinPercent,

@@ -9,6 +9,9 @@ const getCosmos = require('./db/getCosmos')
 const getHeroWinRatesData = require('./lib/getHeroWinRatesData')
 const getCompressedJson = require('./lib/getCompressedJson')
 const changeExtension = require('./lib/changeExtension')
+const getFromNgs = require('./apis/getFromNgs')
+const { last } = require('lodash')
+
 const {
   azure: {
     cosmos: {
@@ -40,7 +43,17 @@ const colors = {
   meleeAssassin: '#EC9337',
   tank: '#FFF2CC',
   bruiser: '#CFE2F3',
-  support: '#DDDDDD'
+  support: '#DDDDDD',
+  // bronze: '#CD7F32',
+  // silver: '#C0C0C0',
+  // gold: '#FFD700',
+  // platinum: '#7788DD',
+  // diamond: '#40CCEE',
+  bronze: '#F2DFCC',
+  silver: '#EFEFEF',
+  gold: '#D4AF37',
+  platinum: '#DDE1F6',
+  diamond: '#CFF2FB'
 }
 
 const getTeamByName = async (container, teamName) => {
@@ -296,6 +309,42 @@ const getRoleColor = (role) => {
   }
 }
 
+const getRankColor = (rankInfo) => {
+  if (rankInfo.metal) {
+    return colors[rankInfo.metal.toLowerCase()]
+  } else {
+    return undefined
+  }
+}
+
+const playerCache = {}
+
+const getPlayerRank = async (fullTag) => {
+  let rankInfo = playerCache[fullTag]
+
+  if (!rankInfo) {
+    const playerData = await getFromNgs(`user/get?user=${encodeURIComponent(fullTag)}`)
+
+    if (playerData.returnObject) {
+      const lastRank = last(playerData.returnObject.verifiedRankHistory)
+
+      rankInfo = {
+        metal: lastRank.hlRankMetal,
+        division: lastRank.hlRankDivision
+      }
+    } else {
+      rankInfo = {
+        metal: '',
+        division: 0
+      }
+    }
+
+    playerCache[fullTag] = rankInfo
+  }
+
+  return rankInfo
+}
+
 const fillMapSheet = (ws, ourMaps, theirMaps) => {
   const firstMapRow = 5
   let mapRow = firstMapRow
@@ -399,7 +448,7 @@ const fillHeroesSheet = async (ws, heroData, title) => {
   for (const row of heroData) {
     ws.cell(currentRow, 1).string(row.role).style({ fill: getFill(getRoleColor(row.role)) })
     ws.cell(currentRow, 2).string(row.hero)
-    ws.cell(currentRow, 3).string(row.player)
+    ws.cell(currentRow, 3).string(row.player).style({ fill: getFill(getRankColor(await getPlayerRank(`${row.player}#${row.tag}`))) })
     ws.cell(currentRow, 4).string(row.source).style({ alignment: { horizontal: 'center' } })
     ws.cell(currentRow, 5).number(row.games).style({ alignment: { horizontal: 'center' } })
     ws.cell(currentRow, 6).number(row.winRate).style({ alignment: { horizontal: 'center' }, numberFormat: '#%; -#%; 0%' }).style(getWinRateStyle(row.winRate))
@@ -575,7 +624,7 @@ const fillBansSheet = (ws, title, bans) => {
   ws.row(3).filter()
 }
 
-const fillMatchHistorySheet = (ws, matches) => {
+const fillMatchHistorySheet = async (ws, matches) => {
   const players = []
 
   for (const match of matches) {
@@ -584,7 +633,7 @@ const fillMatchHistorySheet = (ws, matches) => {
         let foundPlayer = players.find(p => p.name === player.name)
 
         if (!foundPlayer) {
-          foundPlayer = { name: player.name, count: 0 }
+          foundPlayer = { name: player.name, tag: player.tag, count: 0 }
           players.push(foundPlayer)
         }
 
@@ -597,17 +646,23 @@ const fillMatchHistorySheet = (ws, matches) => {
   const playerCount = sortedPlayers.length
 
   ws.cell(1, 1, 1, 18 + sortedPlayers.length, true).string('Match History').style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
-  ws.cell(3, 3).string('Blue = Map Pick')
+  ws.cell(4, 3).string('Blue = Map Pick')
 
   for (let playerIndex = 0; playerIndex < sortedPlayers.length; playerIndex++) {
-    ws.cell(3, 5 + playerIndex).string(sortedPlayers[playerIndex].name).style({ alignment: { horizontal: 'center' }, font: { bold: true } })
+    const rankInfo = await getPlayerRank(`${sortedPlayers[playerIndex].name}#${sortedPlayers[playerIndex].tag}`)
+
+    if (rankInfo.metal) {
+      ws.cell(3, 5 + playerIndex).string(`${rankInfo.metal} ${rankInfo.division}`).style({ alignment: { horizontal: 'center' }, fill: getFill(getRankColor(rankInfo)) })
+    }
+
+    ws.cell(4, 5 + playerIndex).string(sortedPlayers[playerIndex].name).style({ alignment: { horizontal: 'center' }, font: { bold: true } })
   }
 
-  ws.cell(3, 6 + playerCount, 3, 8 + playerCount, true).string('Bans').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.ban) })
-  ws.cell(3, 10 + playerCount, 3, 14 + playerCount, true).string('Picks In Order').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.pick) })
-  ws.cell(3, 16 + playerCount, 3, 18 + playerCount, true).string('Banned By Opponent').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
+  ws.cell(4, 6 + playerCount, 4, 8 + playerCount, true).string('Bans').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.ban) })
+  ws.cell(4, 10 + playerCount, 4, 14 + playerCount, true).string('Picks In Order').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.pick) })
+  ws.cell(4, 16 + playerCount, 4, 18 + playerCount, true).string('Banned By Opponent').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
 
-  let currentRow = 5
+  let currentRow = 6
 
   for (const match of matches) {
     ws.cell(currentRow, 1).string(match.opponent)
@@ -703,7 +758,7 @@ const generateWorkbook = async (ourTeamData, theirTeamData, startSeason) => {
   fillPicksSheet(picksSheet, orderBy(theirTeamData.picks, p => 0 - p.count))
   fillBansSheet(bansSheet, 'Bans', orderBy(theirTeamData.bans, b => 0 - b.count))
   fillBansSheet(bansAgainstSheet, 'Banned By Opponent', orderBy(theirTeamData.opponentBans, b => 0 - b.count))
-  fillMatchHistorySheet(matchHistorySheet, orderBy(theirTeamData.currentSeasonMatches, ['date'], ['desc']))
+  await fillMatchHistorySheet(matchHistorySheet, orderBy(theirTeamData.currentSeasonMatches, ['date'], ['desc']))
 
   return await wb.writeToBuffer()
 }
