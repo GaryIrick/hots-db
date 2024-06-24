@@ -6,7 +6,7 @@ module.exports = {
     keyVault: 'hots-db-keys',
     resourceGroup: 'hots-db-resource-group',
     functionAppName: 'hots-db-functions',
-    functionAppUrl: 'https://api.hots-helper.com',
+    functionAppUrl: 'https://hots-db-functions.azurewebsites.net',
     cdn: {
       domainNamesResourceGroup: 'domain-names',
       domain: 'hots-helper.com',
