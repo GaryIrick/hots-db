@@ -51,21 +51,3 @@ resource "azurerm_cosmosdb_sql_container" "players_container" {
   partition_key_path    = "/id"
   partition_key_version = 1
 }
-
-resource "azurerm_cosmosdb_sql_container" "herostats_container" {
-  name                  = "hero-stats"
-  resource_group_name   = local.resource_group
-  account_name          = azurerm_cosmosdb_account.cosmos_account.name
-  database_name         = azurerm_cosmosdb_sql_database.database.name
-  partition_key_path    = "/date"
-  partition_key_version = 1
-}
-
-resource "azurerm_cosmosdb_sql_container" "chat_history_container" {
-  name                  = "chat-history"
-  resource_group_name   = local.resource_group
-  account_name          = azurerm_cosmosdb_account.cosmos_account.name
-  database_name         = azurerm_cosmosdb_sql_database.database.name
-  partition_key_path    = "/id"
-  partition_key_version = 1
-}

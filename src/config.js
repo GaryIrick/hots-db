@@ -7,13 +7,6 @@ module.exports = {
     resourceGroup: 'hots-db-resource-group',
     functionAppName: 'hots-db-functions',
     functionAppUrl: 'https://hots-db-functions.azurewebsites.net',
-    cdn: {
-      domainNamesResourceGroup: 'domain-names',
-      domain: 'hots-helper.com',
-      cdnProfile: 'hots-db-web-cdn',
-      cdnEndpoint: 'hots-db-web-endpoint',
-      certificateName: 'hots-helper-certificate'
-    },
     storage: {
       account: 'hotsdbdata',
       configContainer: 'config',
@@ -28,8 +21,7 @@ module.exports = {
       readOnlyKey: 'cosmos-read-only-key',
       readWriteKey: 'cosmos-read-write-key',
       matchesContainer: 'ngs-matches',
-      teamsContainer: 'ngs-teams',
-      heroStatsContainer: 'hero-stats'
+      teamsContainer: 'ngs-teams'
     }
   },
   sqlServer: {

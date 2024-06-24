@@ -90,35 +90,4 @@ resource "azurerm_role_assignment" "functions_storage_access" {
   principal_id         = azurerm_windows_function_app.hots_db_functions.identity[0].principal_id
 }
 
-// A container named "$web" will be created automatically.
-resource "azurerm_storage_account" "web" {
-  name                            = "hotsdbweb"
-  resource_group_name             = local.resource_group
-  location                        = local.location
-  account_tier                    = "Standard"
-  account_kind                    = "StorageV2"
-  account_replication_type        = "LRS"
-  enable_https_traffic_only       = true
-  public_network_access_enabled   = true
-  allow_nested_items_to_be_public = true
 
-  static_website {
-    index_document     = "index.html"
-    error_404_document = "404.html"
-  }
-}
-
-resource "azurerm_storage_container" "bot_graphs" {
-  name                  = "bot-graphs"
-  storage_account_name  = azurerm_storage_account.web.name
-  container_access_type = "blob"
-}
-
-resource "azurerm_storage_blob" "test_file" {
-  name                   = "index.html"
-  storage_account_name   = azurerm_storage_account.web.name
-  storage_container_name = "$web"
-  type                   = "Block"
-  source                 = "index.html"
-  content_type           = "text/html"
-}

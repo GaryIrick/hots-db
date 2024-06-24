@@ -39,8 +39,6 @@ resource "azurerm_windows_function_app" "hots_db_functions" {
 
     cors {
       allowed_origins = [
-        "https://hots-helper.com",
-        "https://www.hots-helper.com",
         "https://portal.azure.com"
       ]
     }
