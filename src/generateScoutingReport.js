@@ -44,16 +44,12 @@ const colors = {
   tank: '#FFF2CC',
   bruiser: '#CFE2F3',
   support: '#DDDDDD',
-  // bronze: '#CD7F32',
-  // silver: '#C0C0C0',
-  // gold: '#FFD700',
-  // platinum: '#7788DD',
-  // diamond: '#40CCEE',
-  bronze: '#F2DFCC',
-  silver: '#EFEFEF',
-  gold: '#D4AF37',
-  platinum: '#DDE1F6',
-  diamond: '#CFF2FB'
+  bronze: '#DAB79A',
+  silver: '#C0D2E2',
+  gold: '#F7D77D',
+  platinum: '#DCC5FF',
+  diamond: '#80E5FF',
+  unranked: '#FFFFFF'
 }
 
 const getTeamByName = async (container, teamName) => {
@@ -313,7 +309,7 @@ const getRankColor = (rankInfo) => {
   if (rankInfo.metal) {
     return colors[rankInfo.metal.toLowerCase()]
   } else {
-    return undefined
+    return colors.unranked
   }
 }
 
@@ -651,7 +647,7 @@ const fillMatchHistorySheet = async (ws, matches) => {
   for (let playerIndex = 0; playerIndex < sortedPlayers.length; playerIndex++) {
     const rankInfo = await getPlayerRank(`${sortedPlayers[playerIndex].name}#${sortedPlayers[playerIndex].tag}`)
 
-    if (rankInfo.metal) {
+    if (rankInfo.metal && rankInfo.metal !== 'Unranked') {
       ws.cell(3, 5 + playerIndex).string(`${rankInfo.metal} ${rankInfo.division}`).style({ alignment: { horizontal: 'center' }, fill: getFill(getRankColor(rankInfo)) })
     }
 
