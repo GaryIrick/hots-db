@@ -34,7 +34,7 @@ resource "azurerm_windows_function_app" "hots_db_functions" {
     application_insights_key = azurerm_application_insights.functions_logs.instrumentation_key
 
     application_stack {
-      node_version = "~18"
+      node_version = "~20"
     }
 
     cors {
