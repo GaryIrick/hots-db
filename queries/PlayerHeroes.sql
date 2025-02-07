@@ -23,7 +23,10 @@ VALUES
   (12),
   (13),
   (14),
-  (15)
+  (15),
+  (16),
+  (17),
+  (18)
 ;
 
 DECLARE @targetWinRate AS float = 0.00;
@@ -39,11 +42,12 @@ WITH players AS
     p.BattleTag in
     (
       'Rackham#1819',
-      'EmVP#1269',
-      'aaron#12738',
+      'Emtinoh#1609',
       'WENlS#11638',
       'Aura#1724',
-      'TempestJet#11794'
+      'DoubleLDam#1946',
+      'Kian#11919',
+      'stankyslayer#1454'
     )
 ),
 heroes AS
