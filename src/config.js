@@ -13,7 +13,8 @@ module.exports = {
       rawContainer: 'raw',
       parsedContainer: 'parsed',
       sqlImportContainer: 'sql-import',
-      sparkImportContainer: 'spark-import'
+      sparkImportContainer: 'spark-import',
+      backupsContainer: 'database-backups'
     },
     cosmos: {
       account: 'hots-db-cosmos',

@@ -478,3 +478,6 @@ hots-db.zip
 
 __azurite*
 __blobstorage*
+
+# Claude
+settings.local.json

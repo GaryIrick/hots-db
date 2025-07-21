@@ -7,7 +7,7 @@ module.exports = async () => {
     server: db.hostname,
     database: db.database,
     connectionTimeout: 60 * 1000,
-    requestTimeout: 10 * 60 * 1000,
+    requestTimeout: 30 * 60 * 1000,
     options: {
       enableArithAbort: true,
       encrypt: true
