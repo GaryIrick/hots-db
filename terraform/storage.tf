@@ -75,6 +75,12 @@ resource "azurerm_storage_container" "stats" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_container" "db_backups" {
+  name                  = "database-backups"
+  storage_account_name  = azurerm_storage_account.hots_db_data.name
+  container_access_type = "private"
+}
+
 resource "azurerm_storage_account" "functions" {
   name                     = "hotsdbfunctions"
   location                 = local.location
