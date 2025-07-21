@@ -480,4 +480,4 @@ __azurite*
 __blobstorage*
 
 # Claude
-settings.local.json
+.claude/*
