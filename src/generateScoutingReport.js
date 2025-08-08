@@ -10,7 +10,6 @@ const getHeroWinRatesData = require('./lib/getHeroWinRatesData')
 const getCompressedJson = require('./lib/getCompressedJson')
 const changeExtension = require('./lib/changeExtension')
 const getFromNgs = require('./apis/getFromNgs')
-const { last } = require('lodash')
 
 const {
   azure: {
@@ -49,6 +48,7 @@ const colors = {
   gold: '#F7D77D',
   platinum: '#DCC5FF',
   diamond: '#80E5FF',
+  master: '#ed79e5',
   unranked: '#FFFFFF'
 }
 
@@ -315,26 +315,37 @@ const getRankColor = (rankInfo) => {
 
 const playerCache = {}
 
+const getHighestRank = (rankHistory) => {
+  const rankOrder = ['Master', 'Diamond', 'Platinum', 'Gold', 'Silver', 'Bronze', 'Unranked']
+
+  const sortedHistory = rankHistory
+    .filter(h => h.hlRankMetal !== undefined && h.hlRankDivision !== undefined)
+    .sort((a, b) => {
+      const aMetalRank = rankOrder.indexOf(a.hlRankMetal)
+      const bMetalRank = rankOrder.indexOf(b.hlRankMetal)
+
+      if (aMetalRank !== -1 && bMetalRank !== -1 && aMetalRank !== bMetalRank) {
+        return aMetalRank - bMetalRank
+      }
+
+      return a.hlRankMetal === 'Master' ? b.hlRankDivision - a.hlRankDivision : a.hlRankDivision - b.hlRankDivision
+    })
+
+  return sortedHistory.length > 0 ? sortedHistory[0] : { hlRankMetal: 'Unranked', hlRankDivision: 0 }
+}
+
 const getPlayerRank = async (fullTag) => {
   let rankInfo = playerCache[fullTag]
 
   if (!rankInfo) {
     const playerData = await getFromNgs(`user/get?user=${encodeURIComponent(fullTag)}`)
 
-    if (playerData.returnObject) {
-      const lastRank = last(playerData.returnObject.verifiedRankHistory)
+    const bestRank = playerData.returnObject ? getHighestRank(playerData.returnObject.verifiedRankHistory) : null
 
-      rankInfo = {
-        metal: lastRank.hlRankMetal,
-        division: lastRank.hlRankDivision
-      }
-    } else {
-      rankInfo = {
-        metal: '',
-        division: 0
-      }
+    rankInfo = {
+      metal: bestRank.hlRankMetal,
+      division: bestRank.hlRankDivision
     }
-
     playerCache[fullTag] = rankInfo
   }
 

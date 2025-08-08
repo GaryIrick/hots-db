@@ -16,18 +16,28 @@ const sql = `
     __seasons__
   ;
 
-  WITH players AS
+  WITH raw_players AS
   (
     SELECT
       tp.PlayerId,
-      p.Name,
-      p.Tag AS Tag
+      bt.Name,
+      bt.Tag AS Tag,
+      ROW_NUMBER() OVER (PARTITION BY tp.PlayerId ORDER BY CASE WHEN bt.Tag = '0000' THEN 1 ELSE 0 END, bt.LastSeen DESC) AS rnk
     FROM
       TeamPlayer tp
-      JOIN Player p
-        ON p.PlayerId = tp.PlayerId
+      JOIN BattleTag bt
+        ON bt.PlayerId = tp.PlayerId
     WHERE
       tp.TeamId = @teamId
+  ),
+  players AS
+  (
+    SELECT
+      *
+    FROM
+      raw_players
+    WHERE
+      rnk = 1
   ),
   heroes AS
   (
