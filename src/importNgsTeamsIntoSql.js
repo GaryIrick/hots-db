@@ -33,19 +33,20 @@ const attachPlayer = async (db, teamId, playerTag, isCaptain, isAssistantCaptain
     .input('playerId', playerId)
     .input('isCaptain', isCaptain)
     .input('isAssistantCaptain', isAssistantCaptain)
+    .input('ngsBattleTag', playerTag)
     .query(`
       MERGE TeamPlayer AS tgt
       USING
       (
-        SELECT @teamId, @playerId, @isCaptain, @isAssistantCaptain
-      ) src(TeamId, PlayerId, IsCaptain, IsAssistantCaptain)
+        SELECT @teamId, @playerId, @isCaptain, @isAssistantCaptain, @ngsBattleTag
+      ) src(TeamId, PlayerId, IsCaptain, IsAssistantCaptain, NgsBattleTag)
         ON src.TeamId = tgt.TeamId
         AND src.PlayerId = tgt.PlayerId
       WHEN MATCHED THEN
-        UPDATE SET IsCaptain = src.IsCaptain, IsAssistantCaptain = src.IsAssistantCaptain
+        UPDATE SET IsCaptain = src.IsCaptain, IsAssistantCaptain = src.IsAssistantCaptain, NgsBattleTag = src.NgsBattleTag
       WHEN NOT MATCHED THEN
-        INSERT(TeamId, PlayerId, IsCaptain, IsAssistantCaptain)
-        VALUES(src.TeamId, src.PlayerId, src.IsCaptain, src.IsAssistantCaptain)
+        INSERT(TeamId, PlayerId, IsCaptain, IsAssistantCaptain, NgsBattleTag)
+        VALUES(src.TeamId, src.PlayerId, src.IsCaptain, src.IsAssistantCaptain, src.NgsBattleTag)
       OUTPUT
         inserted.PlayerId
     `)

@@ -342,10 +342,12 @@ const getPlayerRank = async (fullTag) => {
 
     const bestRank = playerData.returnObject ? getHighestRank(playerData.returnObject.verifiedRankHistory) : null
 
-    rankInfo = {
-      metal: bestRank.hlRankMetal,
-      division: bestRank.hlRankDivision
-    }
+    rankInfo = bestRank
+      ? {
+          metal: bestRank.hlRankMetal,
+          division: bestRank.hlRankDivision
+        }
+      : { metal: 'Unranked', division: 0 }
     playerCache[fullTag] = rankInfo
   }
 
