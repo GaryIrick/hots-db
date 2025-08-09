@@ -19,14 +19,13 @@ const sql = `
   WITH players AS
   (
     SELECT
-      tp.PlayerId,
+      bt.PlayerId,
       bt.Name,
       bt.Tag AS Tag
     FROM
       TeamPlayer tp
       JOIN BattleTag bt
-        ON bt.PlayerId = tp.PlayerId
-        AND bt.FullTag = tp.NgsBattleTag
+        ON bt.FullTag = tp.NgsBattleTag
     WHERE
       tp.TeamId = @teamId
   ),
