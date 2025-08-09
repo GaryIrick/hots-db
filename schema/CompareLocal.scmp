@@ -9,7 +9,7 @@
   </SourceModelProvider>
   <TargetModelProvider>
     <ConnectionBasedModelProvider>
-      <ConnectionString>Data Source=localhost;Initial Catalog=replays;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Connect Timeout=60;Encrypt=False;TrustServerCertificate=False</ConnectionString>
+      <ConnectionString>Data Source=localhost;Initial Catalog=replays;Integrated Security=True;Persist Security Info=False;Pooling=False;Multiple Active Result Sets=False;Connect Timeout=60;Encrypt=False;Trust Server Certificate=False</ConnectionString>
     </ConnectionBasedModelProvider>
   </TargetModelProvider>
   <SchemaCompareSettingsService>
@@ -31,6 +31,10 @@
       <PropertyElementName>
         <Name>AllowIncompatiblePlatform</Name>
         <Value>False</Value>
+      </PropertyElementName>
+      <PropertyElementName>
+        <Name>AllowTableRecreation</Name>
+        <Value>True</Value>
       </PropertyElementName>
       <PropertyElementName>
         <Name>BackupDatabaseBeforeChanges</Name>
@@ -265,6 +269,10 @@
         <Value>True</Value>
       </PropertyElementName>
       <PropertyElementName>
+        <Name>IgnoreSensitivityClassifications</Name>
+        <Value>False</Value>
+      </PropertyElementName>
+      <PropertyElementName>
         <Name>AllowUnsafeRowLevelSecurityDataMovement</Name>
         <Value>False</Value>
       </PropertyElementName>
@@ -294,6 +302,10 @@
       </PropertyElementName>
       <PropertyElementName>
         <Name>RegisterDataTierApplication</Name>
+        <Value>False</Value>
+      </PropertyElementName>
+      <PropertyElementName>
+        <Name>PerformIndexOperationsOnline</Name>
         <Value>False</Value>
       </PropertyElementName>
       <PropertyElementName>
@@ -338,7 +350,7 @@
       </PropertyElementName>
       <PropertyElementName>
         <Name>TargetConnectionString</Name>
-        <Value>Data Source=localhost;Initial Catalog=replays;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Connect Timeout=60;Encrypt=False;TrustServerCertificate=False;Application Name="Microsoft SQL Server Data Tools, Schema Compare"</Value>
+        <Value>Data Source=localhost;Initial Catalog=replays;Integrated Security=True;Persist Security Info=False;Pooling=False;Multiple Active Result Sets=False;Connect Timeout=60;Encrypt=False;Trust Server Certificate=False;Application Name="Microsoft SQL Server Data Tools, Schema Compare"</Value>
       </PropertyElementName>
       <PropertyElementName>
         <Name>TreatVerificationErrorsAsWarnings</Name>
@@ -1168,17 +1180,17 @@
     <Filter>Equals_Objects,Not_Supported_Deploy</Filter>
   </SchemaCompareViewSettings>
   <ExcludedTargetElements>
-    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlUser, Microsoft.Data.Tools.Schema.Sql, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlUser, Microsoft.Data.Tools.Schema.Sql, Version=162.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Name>garyirick@gmail.com</Name>
     </SelectedItem>
-    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlUser, Microsoft.Data.Tools.Schema.Sql, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlUser, Microsoft.Data.Tools.Schema.Sql, Version=162.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Name>hots-functions</Name>
     </SelectedItem>
-    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlProcedure, Microsoft.Data.Tools.Schema.Sql, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlProcedure, Microsoft.Data.Tools.Schema.Sql, Version=162.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Name>dbo</Name>
       <Name>CommandExecute</Name>
     </SelectedItem>
-    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlProcedure, Microsoft.Data.Tools.Schema.Sql, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <SelectedItem Type="Microsoft.Data.Tools.Schema.Sql.SchemaModel.SqlProcedure, Microsoft.Data.Tools.Schema.Sql, Version=162.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Name>dbo</Name>
       <Name>IndexOptimize</Name>
     </SelectedItem>

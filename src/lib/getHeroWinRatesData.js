@@ -1,5 +1,11 @@
 const getSqlServer = require('../db/getSqlServer')
 
+// We only store the battletag on TeamPlayer.  There are players with the same
+// battletag and different toon handles, and there are players with the same
+// toon handle and different battletags.  Since there's no way to tame the
+// data we get from the replays, we count on the battletags and lump those
+// players together, since they are really the same person.
+
 const sql = `
   DECLARE @teamId uniqueidentifier;
 
@@ -26,6 +32,9 @@ const sql = `
       TeamPlayer tp
       JOIN BattleTag bt
         ON bt.FullTag = tp.NgsBattleTag
+      JOIN Player p
+        ON p.PlayerId = bt.PlayerId
+        AND p.Region = 'NA'
     WHERE
       tp.TeamId = @teamId
   ),

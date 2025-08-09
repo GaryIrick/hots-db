@@ -6,52 +6,26 @@ const {
   azure: { cosmos: { teamsContainer } }
 } = require('./config')
 
-const attachPlayer = async (db, teamId, playerTag, isCaptain, isAssistantCaptain, log) => {
-  const playerResult = await db.request()
-    .input('playerTag', playerTag)
-    .query(`
-        SELECT 
-          bt.PlayerId 
-        FROM 
-          BattleTag bt
-          JOIN Player p
-            ON p.PlayerId = bt.PlayerId
-        WHERE 
-          bt.FullTag = @playerTag
-          AND p.Region = 'NA'
-    `)
-
-  if (playerResult.recordset.length === 0) {
-    log(`Unable to find player ${playerTag}.`)
-    return undefined
-  }
-
-  const playerId = playerResult.recordset[0].PlayerId
-
-  const result = await db.request()
+const attachPlayer = async (db, teamId, playerTag, isCaptain, isAssistantCaptain) => {
+  await db.request()
     .input('teamId', teamId)
-    .input('playerId', playerId)
+    .input('ngsBattleTag', playerTag)
     .input('isCaptain', isCaptain)
     .input('isAssistantCaptain', isAssistantCaptain)
-    .input('ngsBattleTag', playerTag)
     .query(`
       MERGE TeamPlayer AS tgt
       USING
       (
-        SELECT @teamId, @playerId, @isCaptain, @isAssistantCaptain, @ngsBattleTag
-      ) src(TeamId, PlayerId, IsCaptain, IsAssistantCaptain, NgsBattleTag)
+        SELECT @teamId, @ngsBattleTag, @isCaptain, @isAssistantCaptain
+      ) src(TeamId, NgsBattleTag, IsCaptain, IsAssistantCaptain)
         ON src.TeamId = tgt.TeamId
-        AND src.PlayerId = tgt.PlayerId
+        AND src.NgsBattleTag = tgt.NgsBattleTag
       WHEN MATCHED THEN
-        UPDATE SET IsCaptain = src.IsCaptain, IsAssistantCaptain = src.IsAssistantCaptain, NgsBattleTag = src.NgsBattleTag
+        UPDATE SET IsCaptain = src.IsCaptain, IsAssistantCaptain = src.IsAssistantCaptain
       WHEN NOT MATCHED THEN
-        INSERT(TeamId, PlayerId, IsCaptain, IsAssistantCaptain, NgsBattleTag)
-        VALUES(src.TeamId, src.PlayerId, src.IsCaptain, src.IsAssistantCaptain, src.NgsBattleTag)
-      OUTPUT
-        inserted.PlayerId
+        INSERT(TeamId, NgsBattleTag, IsCaptain, IsAssistantCaptain)
+        VALUES(src.TeamId, src.NgsBattleTag, src.IsCaptain, src.IsAssistantCaptain)
     `)
-
-  return result.recordset[0].PlayerId
 }
 
 const importTeam = async (container, db, team, log) => {
@@ -79,21 +53,21 @@ const importTeam = async (container, db, team, log) => {
     `)
 
   const teamId = result.recordset[0].TeamId
-  const playerIds = []
+  const playerTags = []
 
   for (const playerTag of (team.players || [])) {
-    const playerId = await attachPlayer(db, teamId, playerTag, team.captain === playerTag, team.assistantCaptains.includes(playerTag), log)
-    playerIds.push(playerId)
+    await attachPlayer(db, teamId, playerTag, team.captain === playerTag, team.assistantCaptains.includes(playerTag))
+    playerTags.push(playerTag)
   }
 
-  if (playerIds.length > 0) {
+  if (playerTags.length > 0) {
     await db.request()
       .input('teamId', teamId)
       .query(`
       DELETE FROM TeamPlayer
       WHERE
         TeamId = @teamId
-        AND PlayerId NOT IN (${playerIds.filter(id => id).map(id => `'${id}'`).join(',')})
+        AND NgsBattleTag NOT IN (${playerTags.map(id => `'${id}'`).join(',')})
       `)
   } else {
     await db.request()
