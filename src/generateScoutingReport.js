@@ -360,39 +360,39 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
   let lastMapRow = firstMapRow
 
   for (const mapName of currentMapPool) {
-    ws.cell(mapRow, 1).string(mapName)
+    ws.cell(mapRow, 2).string(mapName)
     const ourMap = ourMaps.find(m => m.name === mapName)
     const theirMap = theirMaps.find(m => m.name === mapName)
 
     if (ourMap) {
       if (ourMap.wins + ourMap.losses > 0) {
         const winRate = ourMap.wins / (ourMap.wins + ourMap.losses)
-        ws.cell(mapRow, 2).string(`${ourMap.wins} - ${ourMap.losses}`)
-        ws.cell(mapRow, 3).number(winRate).style(getWinRateStyle(winRate))
+        ws.cell(mapRow, 3).string(`${ourMap.wins} - ${ourMap.losses}`)
+        ws.cell(mapRow, 4).number(winRate).style(getWinRateStyle(winRate))
       }
 
       if (ourMap.picks > 0) {
-        ws.cell(mapRow, 4).number(ourMap.picks)
+        ws.cell(mapRow, 5).number(ourMap.picks)
       }
 
       if (ourMap.bans > 0) {
-        ws.cell(mapRow, 5).number(ourMap.bans)
+        ws.cell(mapRow, 6).number(ourMap.bans)
       }
     }
 
     if (theirMap) {
       if (theirMap.wins + theirMap.losses > 0) {
         const winRate = theirMap.wins / (theirMap.wins + theirMap.losses)
-        ws.cell(mapRow, 7).string(`${theirMap.wins} - ${theirMap.losses}`)
-        ws.cell(mapRow, 8).number(winRate).style(getWinRateStyle(winRate))
+        ws.cell(mapRow, 8).string(`${theirMap.wins} - ${theirMap.losses}`)
+        ws.cell(mapRow, 9).number(winRate).style(getWinRateStyle(winRate))
       }
 
       if (theirMap.picks > 0) {
-        ws.cell(mapRow, 9).number(theirMap.picks)
+        ws.cell(mapRow, 10).number(theirMap.picks)
       }
 
       if (theirMap.bans > 0) {
-        ws.cell(mapRow, 10).number(theirMap.bans)
+        ws.cell(mapRow, 11).number(theirMap.bans)
       }
     }
 
@@ -400,49 +400,50 @@ const fillMapSheet = (ws, ourMaps, theirMaps) => {
     mapRow++
   }
 
-  ws.column(1).width = 30
-  ws.column(6).width = 5
-  ws.cell(firstMapRow, 2, lastMapRow, 10).style({ alignment: { horizontal: 'center' } })
-  ws.cell(firstMapRow, 3, lastMapRow, 3).style({ numberFormat: '#%; -#%; 0%' })
-  ws.cell(firstMapRow, 7, lastMapRow, 8).style({ numberFormat: '#%; -#%; 0%' })
+  ws.column(1).width = 5
+  ws.column(2).width = 30
+  ws.column(7).width = 5
+  ws.cell(firstMapRow, 3, lastMapRow, 11).style({ alignment: { horizontal: 'center' } })
+  ws.cell(firstMapRow, 4, lastMapRow, 4).style({ numberFormat: '#%; -#%; 0%' })
+  ws.cell(firstMapRow, 8, lastMapRow, 9).style({ numberFormat: '#%; -#%; 0%' })
 
-  ws.cell(1, 1, 1, 10, true)
+  ws.cell(1, 2, 1, 11, true)
     .string('Maps')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
-  ws.cell(3, 2, 3, 5, true)
+  ws.cell(3, 3, 3, 6, true)
     .string('Us')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(3, 7, 3, 10, true)
+  ws.cell(3, 8, 3, 11, true)
     .string('Them')
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
-  ws.cell(4, 2)
-    .string('Record')
-    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
   ws.cell(4, 3)
-    .string('Win %')
+    .string('Record')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
   ws.cell(4, 4)
-    .string('Picked')
-    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
-  ws.cell(4, 5)
-    .string('Banned')
-    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
-  ws.cell(4, 7)
-    .string('Record')
-    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
-  ws.cell(4, 8)
     .string('Win %')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
-  ws.cell(4, 9)
+  ws.cell(4, 5)
     .string('Picked')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 6)
+    .string('Banned')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 8)
+    .string('Record')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 9)
+    .string('Win %')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
   ws.cell(4, 10)
+    .string('Picked')
+    .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
+  ws.cell(4, 11)
     .string('Banned')
     .style({ alignment: { horizontal: 'center' }, fill: getFill(colors.subHeader) })
 }
 
 const fillHeroesSheet = async (ws, heroData, title) => {
-  ws.cell(1, 1, 1, 7, true).string(title).style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
+  ws.cell(1, 1, 1, 10, true).string(title).style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.topHeader) })
   ws.cell(3, 1).string('Role').style({ font: { bold: true } })
   ws.cell(3, 2).string('Hero').style({ font: { bold: true } })
   ws.cell(3, 3).string('Player').style({ font: { bold: true } })
@@ -450,7 +451,11 @@ const fillHeroesSheet = async (ws, heroData, title) => {
   ws.cell(3, 5).string('Games').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
   ws.cell(3, 6).string('Win %').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
   ws.cell(3, 7).string('KDA').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
+  ws.cell(3, 8, 3, 10).string('Notes').style({ font: { bold: true }, alignment: { horizontal: 'center' } })
   ws.row(3).filter()
+  ws.column(8).width = 20
+  ws.column(9).width = 20
+  ws.column(10).width = 20
 
   let currentRow = 4
 
