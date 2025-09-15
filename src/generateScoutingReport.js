@@ -503,8 +503,8 @@ const fillWithAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
     .style({ alignment: { horizontal: 'center' }, font: { bold: true }, fill: getFill(colors.subHeader) })
 
   const ourGoodPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
-  const ourBadPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
-  const ourOpponentGoodPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const ourBadPicks = take(orderBy(ourTeamData.picks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'losses'], ['asc', 'desc']), heroCount)
+  const ourOpponentGoodPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'losses'], ['asc', 'desc']), heroCount)
   const ourOpponentBadPicks = take(orderBy(ourTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
 
   let currentRow = firstUsRow
@@ -544,8 +544,8 @@ const fillWithAndAgainstSheet = (ws, ourTeamData, theirTeamData) => {
   }
 
   const theirGoodPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
-  const theirBadPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
-  const theirOpponentGoodPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'wins'], ['asc', 'asc']), heroCount)
+  const theirBadPicks = take(orderBy(theirTeamData.picks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'losses'], ['asc', 'desc']), heroCount)
+  const theirOpponentGoodPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate <= 0.5), ['winRate', 'losses'], ['asc', 'desc']), heroCount)
   const theirOpponentBadPicks = take(orderBy(theirTeamData.opponentPicks.filter(p => p.count >= minGames && p.winRate >= 0.5), ['winRate', 'wins'], ['desc', 'desc']), heroCount)
 
   currentRow = firstThemRow
