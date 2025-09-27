@@ -1,12 +1,12 @@
 resource "azurerm_storage_account" "hots_db_data" {
-  name                      = "hotsdbdata"
-  resource_group_name       = local.resource_group
-  location                  = local.location
-  account_tier              = "Standard"
-  account_kind              = "StorageV2"
-  account_replication_type  = "LRS"
-  is_hns_enabled            = true
-  enable_https_traffic_only = true
+  name                       = "hotsdbdata"
+  resource_group_name        = local.resource_group
+  location                   = local.location
+  account_tier               = "Standard"
+  account_kind               = "StorageV2"
+  account_replication_type   = "LRS"
+  is_hns_enabled             = true
+  https_traffic_only_enabled = true
 }
 
 resource "azurerm_role_assignment" "my_storage_contributor_access" {

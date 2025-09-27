@@ -30,7 +30,7 @@ resource "azurerm_cosmosdb_sql_container" "teams_container" {
   resource_group_name   = local.resource_group
   account_name          = azurerm_cosmosdb_account.cosmos_account.name
   database_name         = azurerm_cosmosdb_sql_database.database.name
-  partition_key_path    = "/id"
+  partition_key_paths   = ["/id"]
   partition_key_version = 1
 }
 
@@ -39,7 +39,7 @@ resource "azurerm_cosmosdb_sql_container" "matches_container" {
   resource_group_name   = local.resource_group
   account_name          = azurerm_cosmosdb_account.cosmos_account.name
   database_name         = azurerm_cosmosdb_sql_database.database.name
-  partition_key_path    = "/id"
+  partition_key_paths   = ["/id"]
   partition_key_version = 1
 }
 
@@ -48,6 +48,6 @@ resource "azurerm_cosmosdb_sql_container" "players_container" {
   resource_group_name   = local.resource_group
   account_name          = azurerm_cosmosdb_account.cosmos_account.name
   database_name         = azurerm_cosmosdb_sql_database.database.name
-  partition_key_path    = "/id"
+  partition_key_paths   = ["/id"]
   partition_key_version = 1
 }
