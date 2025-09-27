@@ -2,11 +2,9 @@
   "name": "hots-db",
   "version": "1.0.0",
   "description": "",
-  "main": "functions/routes.js",
   "scripts": {
     "pack": "npm-pack-zip",
-    "lint": "eslint .",
-    "deploy-functions": "npm-pack-zip && az functionapp deployment source config-zip -g hots-db-resource-group -n hots-db-functions --src hots-db.zip"
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -19,20 +17,15 @@
   },
   "homepage": "https://github.com/GaryIrick/hots-db#readme",
   "dependencies": {
-    "@azure/arm-cdn": "^9.1.0",
     "@azure/arm-dns": "^5.1.0",
     "@azure/cosmos": "^4.5.1",
-    "@azure/functions": "^4.8.0",
     "@azure/identity": "^4.12.0",
-    "@azure/keyvault-certificates": "^4.10.0",
     "@azure/keyvault-secrets": "^4.10.0",
     "@azure/storage-blob": "^12.28.0",
     "@azure/storage-file-datalake": "^12.27.0",
     "@google-cloud/storage": "^7.17.1",
-    "acme-client": "^5.4.0",
     "aws-sdk": "^2.1692.0",
     "chroma-js": "^3.1.2",
-    "combinatorial-generators": "^1.1.2",
     "delay": "^5.0.0",
     "empeeku": "^1.0.2",
     "excel4node": "^1.8.2",
@@ -48,7 +41,6 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "azure-functions-core-tools": "^4.x",
     "eslint": "^8.57.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.29.1",
@@ -68,31 +60,5 @@
     "!package-lock.json",
     "!__azurite*",
     "!local.settings.json"
-  ],
-  "bundleDependencies": [
-    "@azure/arm-cdn",
-    "@azure/arm-dns",
-    "@azure/cosmos",
-    "@azure/functions",
-    "@azure/identity",
-    "@azure/keyvault-certificates",
-    "@azure/keyvault-secrets",
-    "@azure/storage-blob",
-    "@azure/storage-file-datalake",
-    "@azure/cosmos",
-    "@google-cloud/storage",
-    "acme-client",
-    "aws-sdk",
-    "delay",
-    "empeeku",
-    "fastq",
-    "hots-parser",
-    "heroprotocol",
-    "lodash",
-    "moment",
-    "node-forge",
-    "superagent",
-    "tmp-promise",
-    "uuid"
   ]
 }

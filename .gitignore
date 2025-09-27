@@ -478,6 +478,7 @@ hots-db.zip
 
 __azurite*
 __blobstorage*
+__queuestorage*
 
 # Claude
-.claude/*
+.claude

@@ -1,5 +1,3 @@
-const acme = require('acme-client')
-
 // Squelch the warning about Javascript extraction when the parser gets loaded.
 process.env.LOGLEVEL = 'error'
 
@@ -41,10 +39,6 @@ module.exports = {
   },
   google: {
     credentialsSecretName: 'google-credentials'
-  },
-  acme: {
-    caUrl: acme.directory.letsencrypt.production,
-    email: 'garyirick@gmail.com'
   },
   heroesProfile: {
     apiUrl: 'https://api.heroesprofile.com/api',
