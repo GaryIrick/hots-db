@@ -1,4 +1,5 @@
-// E_NOTIMPL: Convert to use FileSystemClient, maybe.
+const fs = require('fs')
+const path = require('path')
 const { SecretClient } = require('@azure/keyvault-secrets')
 const { BlobServiceClient } = require('@azure/storage-blob')
 const { DefaultAzureCredential } = require('@azure/identity')
@@ -9,7 +10,8 @@ const getCosmos = require('./db/getCosmos')
 const {
   ngs: { bucket },
   azure: { keyVault, cosmos: { matchesContainer }, storage: { account, rawContainer } },
-  aws: { credentialsSecretName }
+  aws: { credentialsSecretName },
+  cacheDirectory
 } = require('./config')
 
 let s3
@@ -49,7 +51,7 @@ const doesFileExistInAzure = async (blobClient) => {
   }
 }
 
-const copyFileFromS3ToAzure = async (bucket, key, blobClient, log) => {
+const copyFileFromS3ToAzure = async (bucket, key, blobClient, replayPath, log) => {
   let replay
 
   try {
@@ -72,14 +74,18 @@ const copyFileFromS3ToAzure = async (bucket, key, blobClient, log) => {
     }
   }
   await blobClient.upload(replay, replay.length)
+
+  const cachedFilename = `${cacheDirectory}/replays/${replayPath}`
+  fs.mkdirSync(path.dirname(cachedFilename), { recursive: true })
+  fs.writeFileSync(cachedFilename, replay)
 }
 
 const copyReplay = async (season, key, log) => {
-  const path = `pending/ngs/season-${`${season}`.padStart(2, 0)}/${key}`
-  const blobClient = await getBlobClient(path)
+  const replayPath = `pending/ngs/season-${`${season}`.padStart(2, 0)}/${key}`
+  const blobClient = await getBlobClient(replayPath)
 
   if (!await doesFileExistInAzure(blobClient)) {
-    await copyFileFromS3ToAzure(bucket, key, blobClient, log)
+    await copyFileFromS3ToAzure(bucket, key, blobClient, replayPath, log)
   }
 }
 
