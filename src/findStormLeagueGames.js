@@ -1,3 +1,5 @@
+const fs = require('fs')
+const path = require('path')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { SecretClient } = require('@azure/keyvault-secrets')
@@ -7,7 +9,8 @@ const getFromHeroesProfile = require('./apis/getFromHeroesProfile')
 const streamToBuffer = require('./lib/streamToBuffer')
 const {
   azure: { keyVault, storage: { account, rawContainer, configContainer } },
-  google: { credentialsSecretName }
+  google: { credentialsSecretName },
+  cacheDirectory
 } = require('./config')
 
 const mostRecentFilename = 'heroes-profile-most-recent.txt'
@@ -81,6 +84,9 @@ const copyReplayToAzure = async ({ rawFilesystem, googleStorage, googleProjectId
 
   const fileClient = rawFilesystem.getFileClient(blobPath)
   await fileClient.upload(replay)
+  const cachedFilename = `${cacheDirectory}/replays/${blobPath}`
+  fs.mkdirSync(path.dirname(cachedFilename), { recursive: true })
+  fs.writeFileSync(cachedFilename, replay)
   log(`copied ${blobPath}`)
 }
 
@@ -129,5 +135,5 @@ module.exports = async (maxCount, log) => {
 
   await saveMostRecent(configFilesystem, mostRecent)
 
-  return { count, mostRecent }
+  return count
 }

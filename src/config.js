@@ -1,5 +1,11 @@
 const acme = require('acme-client')
 
+// Squelch the warning about Javascript extraction when the parser gets loaded.
+process.env.LOGLEVEL = 'error'
+
+// Squelch the warning from the AWS SDK.
+process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = '1'
+
 module.exports = {
   azure: {
     location: 'centralus',

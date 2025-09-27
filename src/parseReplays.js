@@ -1,8 +1,6 @@
-// Shut up the warning about Javascript extraction when the parser gets loaded.
-process.env.LOGLEVEL = 'error'
-
-const os = require('os')
+const fs = require('fs')
 const path = require('path')
+const os = require('os')
 const { DataLakeServiceClient } = require('@azure/storage-file-datalake')
 const { DefaultAzureCredential } = require('@azure/identity')
 const { file: getTempFile } = require('tmp-promise')
@@ -11,6 +9,7 @@ const createThreadPool = require('./lib/createThreadPool')
 const putCompressedJson = require('./lib/putCompressedJson')
 const changeExtension = require('./lib/changeExtension')
 const moveBlob = require('./lib/moveBlob')
+const { cacheDirectory } = require('./config')
 
 const {
   azure: { storage: { account, rawContainer, parsedContainer } }
@@ -20,9 +19,17 @@ const parseReplay = async ({ threadPool, rawFilesystem, parsedFilesystem, blobNa
   log(`starting ${blobName}`)
 
   try {
-    const rawFileClient = rawFilesystem.getFileClient(blobName)
     const { path: tempPath, cleanup } = await getTempFile()
-    await rawFileClient.readToFile(tempPath)
+
+    const cachedFilename = `${cacheDirectory}/replays/${blobName}`
+
+    if (fs.existsSync(cachedFilename)) {
+      fs.copyFileSync(cachedFilename, tempPath)
+    } else {
+      const rawFileClient = rawFilesystem.getFileClient(blobName)
+      await rawFileClient.readToFile(tempPath)
+    }
+
     const parse = await threadPool.runTask(tempPath, { replayFile: tempPath })
 
     if (parse.status === 1) {
@@ -32,6 +39,10 @@ const parseReplay = async ({ threadPool, rawFilesystem, parsedFilesystem, blobNa
       log(`parsed ${blobName}`)
     } else {
       throw new Error(`Bad parse: status=${parse.status}`)
+    }
+
+    if (fs.existsSync(cachedFilename)) {
+      fs.unlinkSync(cachedFilename)
     }
 
     await cleanup()

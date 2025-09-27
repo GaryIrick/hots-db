@@ -1,8 +1,8 @@
 const findStormLeagueGames = require('../src/findStormLeagueGames')
 
 const run = async (maxCount) => {
-  const { count, mostRecent } = await findStormLeagueGames(maxCount, console.log)
-  console.log(`Processed ${count} games, most recent is ${mostRecent}.`)
+  const count = await findStormLeagueGames(maxCount, console.log)
+  console.log(`Processed ${count} games.`)
 }
 
 if (process.argv.length !== 3) {
