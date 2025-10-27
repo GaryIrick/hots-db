@@ -676,6 +676,8 @@ const fillMatchHistorySheet = async (ws, matches) => {
   ws.cell(4, 10 + playerCount, 4, 14 + playerCount, true).string('Picks In Order').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.pick) })
   ws.cell(4, 16 + playerCount, 4, 18 + playerCount, true).string('Banned By Opponent').style({ alignment: { horizontal: 'center' }, fill: getFill(colors.opponentBan) })
 
+  ws.cell(5, 3).string('Map').style({ font: { bold: true } })
+
   let currentRow = 6
 
   for (const match of matches) {
@@ -748,6 +750,14 @@ const fillMatchHistorySheet = async (ws, matches) => {
   for (let opponentBanCol = 16 + playerCount; opponentBanCol <= 18 + playerCount; opponentBanCol++) {
     ws.column(opponentBanCol).width = 11
   }
+
+  // Add filter to map column
+  ws.row(5).filter({
+    firstRow: 5,
+    firstColumn: 3,
+    lastRow: currentRow - 1,
+    lastColumn: 3
+  })
 }
 
 const generateWorkbook = async (ourTeamData, theirTeamData, startSeason) => {
