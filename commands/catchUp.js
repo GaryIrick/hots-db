@@ -1,5 +1,3 @@
-const { DefaultAzureCredential } = require('@azure/identity')
-const agent = require('superagent')
 const moment = require('moment')
 const findNgsTeams = require('../src/findNgsTeams')
 const findNgsMatches = require('../src/findNgsMatches')
