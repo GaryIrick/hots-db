@@ -47,7 +47,7 @@ module.exports = {
   ngs: {
     apiUrl: 'https://www.nexusgamingseries.org/api',
     bucket: 'ngs-replay-storage',
-    currentSeason: 21,
+    currentSeason: 22,
     currentMapPool: [
       'Alterac Pass',
       'Battlefield of Eternity',
