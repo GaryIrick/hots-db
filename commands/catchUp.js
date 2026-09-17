@@ -60,7 +60,7 @@ const run = async () => {
 
   // Now look for Storm League, and repeat the relevant parts of the process.
   await callOnce('Getting player privacy changes', () => getPlayerPrivacyChanges(() => {}), log)
-  await callUntilZero('Finding Storm League games', () => findStormLeagueGames(500, () => {}), log)
+  await callUntilZero('Finding Storm League games', () => findStormLeagueGames(100, () => {}), log)
   await callUntilZero('Parsing replays', () => parseReplays(500, () => {}), log)
   await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)
   await callUntilZero('Importing replays into SQL', () => importReplaysIntoSql(100, () => {}), log)
