@@ -195,6 +195,16 @@
                 "<node_internals>/**"
             ],
             "args": []
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch get player privacy changes",
+            "program": "${workspaceFolder}/commands/getPlayerPrivacyChanges.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": []
         }
     ]
 }

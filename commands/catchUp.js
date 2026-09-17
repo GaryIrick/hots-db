@@ -5,6 +5,7 @@ const copyNgsMatches = require('../src/copyNgsMatches')
 const importNgsTeamsIntoSql = require('../src/importNgsTeamsIntosql')
 const importNgsMatchesIntoSql = require('../src/importNgsMatchesIntoSql')
 const findStormLeagueGames = require('../src/findStormLeagueGames')
+const getPlayerPrivacyChanges = require('../src/getPlayerPrivacyChanges')
 const parseReplays = require('../src/parseReplays')
 const generateImports = require('../src/generateImports')
 const importReplaysIntoSql = require('../src/importReplaysIntoSql')
@@ -58,6 +59,7 @@ const run = async () => {
   await callUntilZero('importing NGS matches into SQL', () => importNgsMatchesIntoSql(100, () => {}), log)
 
   // Now look for Storm League, and repeat the relevant parts of the process.
+  await callOnce('Getting player privacy changes', () => getPlayerPrivacyChanges(() => {}), log)
   await callUntilZero('Finding Storm League games', () => findStormLeagueGames(500, () => {}), log)
   await callUntilZero('Parsing replays', () => parseReplays(500, () => {}), log)
   await callUntilZero('Generating imports', () => generateImports(100, () => {}), log)

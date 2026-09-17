@@ -41,7 +41,7 @@ module.exports = {
     credentialsSecretName: 'google-credentials'
   },
   heroesProfile: {
-    apiUrl: 'https://api.heroesprofile.com/api',
+    apiUrl: 'https://www.heroesprofile.com/api/external/v1',
     secretName: 'heroes-profile-api-key'
   },
   ngs: {

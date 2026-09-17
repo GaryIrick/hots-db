@@ -6,7 +6,7 @@ const { azure: { keyVault }, heroesProfile: { apiUrl, secretName } } = require('
 
 let apiKey
 
-module.exports = async (route, params) => {
+module.exports = async (route, params, binary) => {
   if (!apiKey) {
     const vaultUrl = `https://${keyVault}.vault.azure.net`
     const secretClient = new SecretClient(vaultUrl, new DefaultAzureCredential())
@@ -15,24 +15,31 @@ module.exports = async (route, params) => {
   }
 
   const url = `${apiUrl}/${route}`
-  const get = agent
-    .get(url)
-    .query({ mode: 'json' })
-    .query({ api_token: apiKey })
 
-  if (params) {
-    get.query(params)
-  }
+  while (true) {
+    // A superagent request can only be sent once, so build a new one for each attempt.
+    const get = agent
+      .get(url)
+      .set('Authorization', `Bearer ${apiKey}`)
 
-  try {
-    return (await get).body
-  } catch (e) {
-    if (e.statusCode === 429) {
-      console.log('Got 429 from Heroes Profile, pausing for 550 ms.')
-      await delay(500)
+    if (params) {
+      get.query(params)
+    }
+
+    if (binary) {
+      get.responseType('blob')
+    }
+
+    try {
       return (await get).body
-    } else {
-      throw e
+    } catch (e) {
+      if (e.status === 429) {
+        const seconds = Number(e.response.headers['retry-after']) || 1
+        console.log(`Got 429 from Heroes Profile, pausing for ${seconds} s.`)
+        await delay(seconds * 1000)
+      } else {
+        throw e
+      }
     }
   }
 }

@@ -34,8 +34,8 @@ const getTier = (level) => {
 const syncHeroes = async (heroes) => {
   const db = await getSqlServer()
 
-  for (const name of orderBy(Object.keys(heroes), [k => heroes[k].release_date, k => heroes[k].name])) {
-    const { attribute_id: internalName, new_role: role, type, release_date: releaseDate } = heroes[name]
+  for (const hero of orderBy(heroes, ['release_date', 'name'])) {
+    const { name, attribute_id: internalName, new_role: role, type, release_date: releaseDate } = hero
 
     const sql = `
       MERGE Hero AS tgt
@@ -173,11 +173,11 @@ module.exports = async (log) => {
   const datalake = new DataLakeServiceClient(`https://${account}.dfs.core.windows.net`, new DefaultAzureCredential())
   const configFilesystem = datalake.getFileSystemClient(configContainer)
 
-  const heroes = await getFromHeroesProfile('Heroes')
+  const { heroes } = await getFromHeroesProfile('heroes')
   const allHeroes = await syncHeroes(heroes)
   await putUncompressedJson(configFilesystem, 'heroes.json', allHeroes)
 
-  const talents = await getFromHeroesProfile('Heroes/Talents')
+  const { talents } = await getFromHeroesProfile('heroes/talents')
   const allTalents = await syncTalents(talents)
   await putUncompressedJson(configFilesystem, 'talents.json', allTalents)
 }
