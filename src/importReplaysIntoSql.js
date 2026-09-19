@@ -194,7 +194,8 @@ const importGame = async (db, json, source, playerMap) => {
       playerId: playerMap[message.player],
       messageOrder: i + 1,
       time: message.time,
-      message: message.text
+      message: message.text,
+      isAllChat: message.isAllChat ? 1 : 0
     })
   }
 }

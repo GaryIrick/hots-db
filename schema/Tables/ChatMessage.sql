@@ -5,6 +5,7 @@ CREATE TABLE ChatMessage
     MessageOrder smallint NOT NULL,
     Time int NOT NULL,
     Message nvarchar(max) NOT NULL,
+    IsAllChat bit NOT NULL CONSTRAINT DF_ChatMessage_IsAllChat DEFAULT (0),
     CONSTRAINT PK_ChatMessage PRIMARY KEY (GameId, PlayerId, MessageOrder)
 );
 GO

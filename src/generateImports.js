@@ -9,6 +9,7 @@ const changeExtension = require('./lib/changeExtension')
 const getHeroByInternalName = require('./lib/getHeroByInternalName')
 const getRegion = require('./lib/getRegion')
 const moveBlob = require('./lib/moveBlob')
+const { MessageTarget } = require('hots-parser/constants')
 
 const {
   azure: { storage: { account, parsedContainer, sqlImportContainer, sparkImportContainer } }
@@ -135,7 +136,8 @@ const getMessages = (parse, allPlayers) => {
     messages.push({
       player: message.player,
       text: message.text,
-      time: loopsToGameSeconds(message.loop)
+      time: loopsToGameSeconds(message.loop),
+      isAllChat: message.recipient === MessageTarget.All
     })
   }
 

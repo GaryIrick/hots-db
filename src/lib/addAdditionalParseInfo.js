@@ -6,6 +6,7 @@ const { uniq, keys, orderBy } = require('lodash')
 const { MPQArchive } = require('empeeku/mpyq')
 const crypto = require('crypto')
 const parser = require('hots-parser')
+const { MessageType, MessageTarget } = require('hots-parser/constants')
 
 class BitReader {
   constructor (stream) {
@@ -244,6 +245,60 @@ const getPartyMap = (lobby, build) => {
   return partyMap
 }
 
+// hots-parser gets chat from replay.message.events, which only has the chat the uploader's client displayed,
+// so the other team's chat is missing.  Every player's chat is in replay.game.events as a trigger event, but
+// without the recipient, so get that from the uploader's copy of the message when there is one.
+const replaceChat = (parse, initdata, gameevents) => {
+  const userToPlayer = {}
+
+  for (const slot of initdata.m_syncLobbyState.m_lobbyState.m_slots) {
+    if (slot.m_toonHandle) {
+      userToPlayer[slot.m_userId] = slot.m_toonHandle
+    }
+  }
+
+  const existing = parse.match.messages || []
+  const seenChats = existing.filter(m => m.type === MessageType.Chat)
+  const messages = existing.filter(m => m.type !== MessageType.Chat)
+
+  for (const event of gameevents) {
+    if (event._event !== 'NNet.Game.STriggerChatMessageEvent') {
+      continue
+    }
+
+    const player = userToPlayer[event._userid.m_userId]
+
+    if (!player || !parse.players[player]) {
+      continue
+    }
+
+    // The uploader's copy is logged a loop or so before the trigger event.
+    const seenIndex = seenChats.findIndex(m =>
+      m.player === player && m.text === event.m_chatMessage && Math.abs(m.loop - event._gameloop) <= 16)
+    let recipient
+
+    if (seenIndex >= 0) {
+      recipient = seenChats[seenIndex].recipient
+      seenChats.splice(seenIndex, 1)
+    } else {
+      // The uploader never saw it, so it was team chat on the other team.
+      recipient = MessageTarget.Allies
+    }
+
+    messages.push({
+      type: MessageType.Chat,
+      player,
+      team: parse.players[player].team,
+      recipient,
+      loop: event._gameloop,
+      time: parser.loopsToSeconds(event._gameloop - parse.match.loopGameStart),
+      text: event.m_chatMessage
+    })
+  }
+
+  parse.match.messages = orderBy(messages, m => m.loop)
+}
+
 module.exports = (replayPath, parse) => {
   // We could add this to hots-parser so we don't read the file multiple times, but it happens very quickly.
   // I also don't want to take on the maintenance effort of keeping hots-parser up to date if this changes
@@ -263,7 +318,7 @@ module.exports = (replayPath, parse) => {
 
   // Storing this here means we don't have to do something silly like rely on the blob path,
   // which would be different for NGS and HeroesProfile data.
-  const { initdata } = parser.parse(replayPath, ['initdata'])
+  const { initdata, gameevents } = parser.parse(replayPath, ['initdata', 'gameevents'])
   let hashValue = ''
 
   for (const playerId of orderBy(keys(parse.players).map(p => Number(p.split('-')[3])), id => id)) {
@@ -281,4 +336,6 @@ module.exports = (replayPath, parse) => {
   }
 
   parse.fingerprint = fingerprint
+
+  replaceChat(parse, initdata, gameevents)
 }
