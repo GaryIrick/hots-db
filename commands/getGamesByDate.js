@@ -1,13 +1,13 @@
 const getGamesByDate = require('../src/getGamesByDate')
 
-const run = async (startAfter, filename) => {
-  const count = await getGamesByDate(startAfter, filename, console.log)
+const run = async (filename) => {
+  const count = await getGamesByDate(filename, console.log)
   console.log(`Counted ${count} games, wrote ${filename}.`)
 }
 
-if (process.argv.length > 4) {
-  console.log('Usage: getGamesByDate [startAfterReplayId] [filename]')
+if (process.argv.length > 3) {
+  console.log('Usage: getGamesByDate [filename]')
   process.exit(1)
 }
 
-run(Number(process.argv[2] || 0), process.argv[3] || 'gamesByDate.csv')
+run(process.argv[2] || 'gamesByDate.csv')
