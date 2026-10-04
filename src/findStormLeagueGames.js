@@ -58,7 +58,7 @@ module.exports = async (maxCount, log) => {
   const rawFilesystem = datalake.getFileSystemClient(rawContainer)
   let mostRecent = await getMostRecent(configFilesystem)
   // Queue size is small since we will get 429's if we do more at once.
-  const queue = createWorkQueue(5, copyReplayToAzure)
+  const queue = createWorkQueue(2, copyReplayToAzure)
 
   let keepGoing = true
   let count = 0
